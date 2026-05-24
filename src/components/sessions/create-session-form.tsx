@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState } from "react-dom";
 
@@ -31,12 +31,14 @@ export function CreateSessionForm({
 }: CreateSessionFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const [formKey, setFormKey] = useState(0);
   const createSession = createSessionAction.bind(null, courseId);
   const [state, formAction] = useFormState(createSession, initialState);
 
   useEffect(() => {
     if (state.success) {
       formRef.current?.reset();
+      setFormKey((key) => key + 1);
       router.refresh();
     }
   }, [state.success, router]);
@@ -70,8 +72,9 @@ export function CreateSessionForm({
         </p>
       ) : null}
 
-      <form ref={formRef} action={formAction} className="space-y-4">
+      <form key={formKey} ref={formRef} action={formAction} className="space-y-4">
         <InstructorSelectField
+          key={`instructor-${formKey}`}
           id="session-assigned-instructor"
           instructors={instructors}
           defaultValue={defaultAssignedInstructorId}

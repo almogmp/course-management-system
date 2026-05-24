@@ -84,7 +84,19 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       <AdminInstructorWorkloadTable rows={workloadRows} />
 
-      <div className="text-start">
+      <div className="flex flex-wrap gap-2 text-start">
+        <Link
+          href="/reports"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:text-base"
+        >
+          דוחות
+        </Link>
+        <Link
+          href="/admin/instructors"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:text-base"
+        >
+          ניהול מדריכים
+        </Link>
         <Link
           href="/admin/instructor-approvals"
           className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:text-base"

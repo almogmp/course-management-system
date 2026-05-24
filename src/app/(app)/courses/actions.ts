@@ -7,93 +7,62 @@ import { requireAuth } from "@/lib/auth/guards";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
-/** TEMP: FK קבועes זמניים — יוחלפו בבחירה מממשק */
-const TEMP_COURSE_FOREIGN_KEYS = {
-  institution_id: "",
-  primary_supplier_id: "",
-  lead_instructor_id: "",
-} as const;
-
 type CourseInsert = Database["public"]["Tables"]["courses"]["Insert"];
 
-async function resolveTempCourseForeignKeys(): Promise<
-  | {
-      institution_id: string;
-      primary_supplier_id: string;
-      lead_instructor_id: string;
-    }
-  | { error: string }
-> {
-  const supabase = await createServerSupabaseClient();
-
-  const [institution, supplier, instructor] = await Promise.all([
-    TEMP_COURSE_FOREIGN_KEYS.institution_id
-      ? Promise.resolve({ data: { id: TEMP_COURSE_FOREIGN_KEYS.institution_id }, error: null })
-      : supabase.from("institutions").select("id").order("created_at").limit(1).maybeSingle(),
-    TEMP_COURSE_FOREIGN_KEYS.primary_supplier_id
-      ? Promise.resolve({
-          data: { id: TEMP_COURSE_FOREIGN_KEYS.primary_supplier_id },
-          error: null,
-        })
-      : supabase.from("primary_suppliers").select("id").order("created_at").limit(1).maybeSingle(),
-    TEMP_COURSE_FOREIGN_KEYS.lead_instructor_id
-      ? Promise.resolve({
-          data: { id: TEMP_COURSE_FOREIGN_KEYS.lead_instructor_id },
-          error: null,
-        })
-      : supabase.from("instructors").select("id").order("created_at").limit(1).maybeSingle(),
-  ]);
-
-  if (institution.error || supplier.error || instructor.error) {
-    return { error: "שגיאה בטעינת נתוני FK זמניים." };
-  }
-
-  if (!institution.data || !supplier.data || !instructor.data) {
-    return {
-      error:
-        "חסרים מוסד, ספק ראשי או מדריך במערכת. יש ליצור אותם לפני יצירת קורס.",
-    };
-  }
-
-  return {
-    institution_id: institution.data.id,
-    primary_supplier_id: supplier.data.id,
-    lead_instructor_id: instructor.data.id,
-  };
-}
+const LEGACY_SCHOOL_YEAR = "—";
 
 export async function createCourseAction(formData: FormData): Promise<void> {
   await requireAuth();
 
   const name = String(formData.get("name") ?? "").trim();
-  const schoolYear = String(formData.get("school_year") ?? "").trim();
-  const coordinator = String(formData.get("coordinator") ?? "").trim();
+  const institutionId = String(formData.get("institution_id") ?? "").trim();
+  const coordinatorId = String(formData.get("coordinator_id") ?? "").trim();
+  const primarySupplierId = String(formData.get("primary_supplier_id") ?? "").trim();
+  const leadInstructorId = String(formData.get("lead_instructor_id") ?? "").trim();
+  const targetHoursRaw = String(formData.get("target_instructor_hours") ?? "").trim();
 
-  if (!name || !schoolYear || !coordinator) {
+  if (!name || !institutionId || !coordinatorId || !primarySupplierId || !leadInstructorId) {
     redirect(
       `/courses?create=1&error=${encodeURIComponent("יש למלא את כל שדות החובה.")}`,
     );
   }
 
-  const foreignKeys = await resolveTempCourseForeignKeys();
-  if ("error" in foreignKeys) {
-    redirect(`/courses?create=1&error=${encodeURIComponent(foreignKeys.error)}`);
+  const supabase = await createServerSupabaseClient();
+
+  const { data: coordinator, error: coordinatorError } = await supabase
+    .from("institution_coordinators")
+    .select("id, full_name, institution_id")
+    .eq("id", coordinatorId)
+    .maybeSingle();
+
+  if (coordinatorError || !coordinator || coordinator.institution_id !== institutionId) {
+    redirect(
+      `/courses?create=1&error=${encodeURIComponent("יש לבחור רכז תקין מהמוסד שנבחר.")}`,
+    );
   }
 
-  const supabase = await createServerSupabaseClient();
+  const targetInstructorHours = targetHoursRaw ? Number(targetHoursRaw) : null;
+
+  if (targetInstructorHours !== null && (Number.isNaN(targetInstructorHours) || targetInstructorHours < 0)) {
+    redirect(
+      `/courses?create=1&error=${encodeURIComponent("יעד שעות אינו תקין.")}`,
+    );
+  }
 
   const payload: CourseInsert = {
     name,
-    school_year: schoolYear,
-    coordinator,
-    institution_id: foreignKeys.institution_id,
-    primary_supplier_id: foreignKeys.primary_supplier_id,
-    lead_instructor_id: foreignKeys.lead_instructor_id,
+    institution_id: institutionId,
+    coordinator: coordinator.full_name,
+    coordinator_id: coordinator.id,
+    primary_supplier_id: primarySupplierId,
+    lead_instructor_id: leadInstructorId,
     status: "active",
+    school_year: LEGACY_SCHOOL_YEAR,
     instructor_hourly_wage: 0,
     company_hourly_rate: 0,
     instructor_hours: 0,
     company_hours: 0,
+    target_instructor_hours: targetInstructorHours,
   };
 
   const { error } = await supabase.from("courses").insert(payload);

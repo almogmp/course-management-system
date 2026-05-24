@@ -26,7 +26,6 @@ export function CoursesList({ courses }: CoursesListProps) {
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <CourseStatusBadge status={course.status} />
-                <span className="text-sm text-muted-foreground">{course.school_year}</span>
               </div>
               <Link
                 href={`/courses/${course.id}/sessions`}
@@ -54,9 +53,6 @@ export function CoursesList({ courses }: CoursesListProps) {
                 סטטוס
               </th>
               <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
-                שנת לימודים
-              </th>
-              <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
                 פעולות
               </th>
             </tr>
@@ -71,7 +67,6 @@ export function CoursesList({ courses }: CoursesListProps) {
                 <td className="px-4 py-3">
                   <CourseStatusBadge status={course.status} />
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{course.school_year}</td>
                 <td className="px-4 py-3">
                   <Link
                     href={`/courses/${course.id}/sessions`}

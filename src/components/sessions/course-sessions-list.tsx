@@ -3,7 +3,7 @@
 import { DeleteSessionButton } from "@/components/sessions/delete-session-button";
 import { EditSessionForm } from "@/components/sessions/edit-session-form";
 import { SessionWorkflowActions } from "@/components/sessions/session-workflow-actions";
-import { SessionAttendanceActions } from "@/components/sessions/session-attendance-actions";
+import { SessionSimpleActions } from "@/components/sessions/session-simple-actions";
 import { AdminQuickStatusSelect } from "@/components/sessions/admin-quick-status-select";
 import { isSessionDelayed } from "@/lib/sessions/session-delay";
 import { SessionStatusBadge } from "@/components/sessions/session-status-badge";
@@ -162,7 +162,7 @@ export function CourseSessionsList({
                     showAdminActions={showAdminActions}
                     currentInstructorId={currentInstructorId}
                   />
-                  <SessionAttendanceActions
+                  <SessionSimpleActions
                     courseId={courseId}
                     session={session}
                     currentInstructorId={currentInstructorId}
@@ -288,7 +288,7 @@ export function CourseSessionsList({
                         showAdminActions={showAdminActions}
                         currentInstructorId={currentInstructorId}
                       />
-                      <SessionAttendanceActions
+                      <SessionSimpleActions
                         courseId={courseId}
                         session={session}
                         currentInstructorId={currentInstructorId}

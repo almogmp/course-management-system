@@ -8,10 +8,10 @@ import type { SessionStatus } from "@/components/sessions/constants";
 export type CourseSessionsContext = {
   id: string;
   name: string;
-  school_year: string;
   status: CourseStatus;
   institution_name: string | null;
   lead_instructor_id: string;
+  target_instructor_hours: number | null;
 };
 
 export type CourseSessionListItem = {
@@ -32,7 +32,7 @@ export type CourseSessionListItem = {
 
 type CourseQueryRow = Pick<
   Database["public"]["Tables"]["courses"]["Row"],
-  "id" | "name" | "school_year" | "status" | "lead_instructor_id"
+  "id" | "name" | "status" | "lead_instructor_id" | "target_instructor_hours"
 > & {
   institutions: Pick<Database["public"]["Tables"]["institutions"]["Row"], "name"> | null;
 };
@@ -102,10 +102,10 @@ export async function getCourseSessionsPageData(
         course: {
           id: courseId,
           name: "קורס",
-          school_year: "—",
           status: "active",
           institution_name: null,
           lead_instructor_id: "",
+          target_instructor_hours: null,
         },
         sessions: [],
       };
@@ -114,10 +114,10 @@ export async function getCourseSessionsPageData(
     const course: CourseSessionsContext = {
       id: courseId,
       name: firstRow?.course_name ?? "קורס",
-      school_year: "",
       status: "active",
       institution_name: null,
       lead_instructor_id: "",
+      target_instructor_hours: null,
     };
 
     const sessions: CourseSessionListItem[] = (
@@ -145,7 +145,7 @@ export async function getCourseSessionsPageData(
 
   const { data: courseRow, error: courseError } = await supabase
     .from("courses")
-    .select("id, name, school_year, status, lead_instructor_id, institutions(name)")
+    .select("id, name, status, lead_instructor_id, target_instructor_hours, institutions(name)")
     .eq("id", courseId)
     .maybeSingle();
 
@@ -175,10 +175,10 @@ export async function getCourseSessionsPageData(
   const course: CourseSessionsContext = {
     id: courseData.id,
     name: courseData.name,
-    school_year: courseData.school_year,
     status: courseData.status,
     institution_name: courseData.institutions?.name ?? null,
     lead_instructor_id: courseData.lead_instructor_id,
+    target_instructor_hours: courseData.target_instructor_hours ?? null,
   };
 
   const sessions: CourseSessionListItem[] = ((sessionRows ?? []) as AdminSessionRow[]).map(

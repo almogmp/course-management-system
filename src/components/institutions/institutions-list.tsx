@@ -1,10 +1,16 @@
+import Link from "next/link";
+
 import type { InstitutionListItem } from "@/components/institutions/get-institutions";
 
 type InstitutionsListProps = {
   institutions: InstitutionListItem[];
+  showManageLinks?: boolean;
 };
 
-export function InstitutionsList({ institutions }: InstitutionsListProps) {
+export function InstitutionsList({
+  institutions,
+  showManageLinks = false,
+}: InstitutionsListProps) {
   return (
     <>
       <ul className="space-y-3 md:hidden">
@@ -22,6 +28,14 @@ export function InstitutionsList({ institutions }: InstitutionsListProps) {
               <p className="text-sm text-muted-foreground" dir="ltr">
                 {institution.phone}
               </p>
+              {showManageLinks ? (
+                <Link
+                  href={`/institutions/${institution.id}`}
+                  className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  ניהול רכזים
+                </Link>
+              ) : null}
             </div>
           </li>
         ))}
@@ -43,6 +57,11 @@ export function InstitutionsList({ institutions }: InstitutionsListProps) {
               <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
                 טלפון
               </th>
+              {showManageLinks ? (
+                <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
+                  פעולות
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
@@ -54,6 +73,16 @@ export function InstitutionsList({ institutions }: InstitutionsListProps) {
                 <td className="px-4 py-3 text-muted-foreground" dir="ltr">
                   {institution.phone}
                 </td>
+                {showManageLinks ? (
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/institutions/${institution.id}`}
+                      className="font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      ניהול רכזים
+                    </Link>
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>

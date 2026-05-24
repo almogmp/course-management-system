@@ -3,9 +3,11 @@ import { InstitutionsEmptyState } from "@/components/institutions/institutions-e
 import { InstitutionsList } from "@/components/institutions/institutions-list";
 import { Container } from "@/components/ui/container";
 import { requireAuth } from "@/lib/auth/guards";
+import { getAuthSnapshot } from "@/lib/auth/session";
 
 export default async function InstitutionsPage() {
   await requireAuth();
+  const { isAdmin } = await getAuthSnapshot();
 
   const institutions = await getInstitutions();
 
@@ -23,7 +25,7 @@ export default async function InstitutionsPage() {
       {institutions.length === 0 ? (
         <InstitutionsEmptyState />
       ) : (
-        <InstitutionsList institutions={institutions} />
+        <InstitutionsList institutions={institutions} showManageLinks={isAdmin} />
       )}
     </Container>
   );

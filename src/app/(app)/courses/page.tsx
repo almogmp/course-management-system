@@ -4,6 +4,7 @@ import { CoursesList } from "@/components/courses/courses-list";
 import { getCourses } from "@/components/courses/get-courses";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
+import { getCourseFormOptions } from "@/lib/courses/get-course-form-options";
 import { requireAuth } from "@/lib/auth/guards";
 
 type CoursesPageProps = {
@@ -22,6 +23,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
       ? decodeURIComponent(searchParams.error)
       : null;
   const courses = await getCourses();
+  const courseFormOptions = showCreateForm ? await getCourseFormOptions() : null;
 
   return (
     <Container as="main" className="flex flex-1 flex-col gap-6 py-8">
@@ -41,8 +43,8 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
         ) : null}
       </header>
 
-      {showCreateForm ? (
-        <CreateCourseForm errorMessage={errorMessage} />
+      {showCreateForm && courseFormOptions ? (
+        <CreateCourseForm options={courseFormOptions} errorMessage={errorMessage} />
       ) : null}
 
       {courses.length === 0 ? (

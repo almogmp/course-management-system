@@ -3,14 +3,14 @@ import type { Database } from "@/types/database";
 
 export type CourseListItem = Pick<
   Database["public"]["Tables"]["courses"]["Row"],
-  "id" | "name" | "status" | "school_year"
+  "id" | "name" | "status"
 > & {
   institution_name: string | null;
 };
 
 type CourseQueryRow = Pick<
   Database["public"]["Tables"]["courses"]["Row"],
-  "id" | "name" | "status" | "school_year"
+  "id" | "name" | "status"
 > & {
   institutions: Pick<
     Database["public"]["Tables"]["institutions"]["Row"],
@@ -23,7 +23,7 @@ export async function getCourses(): Promise<CourseListItem[]> {
 
   const { data, error } = await supabase
     .from("courses")
-    .select("id, name, status, school_year, institutions(name)")
+    .select("id, name, status, institutions(name)")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -36,7 +36,6 @@ export async function getCourses(): Promise<CourseListItem[]> {
     id: row.id,
     name: row.name,
     status: row.status,
-    school_year: row.school_year,
     institution_name: row.institutions?.name ?? null,
   }));
 }

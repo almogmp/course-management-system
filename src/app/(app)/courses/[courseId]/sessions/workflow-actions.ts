@@ -111,6 +111,44 @@ export async function markSessionCompletedAction(
   return { success: true };
 }
 
+export async function instructorMarkCancelledAction(
+  courseId: string,
+  sessionId: string,
+  _prevState: SessionWorkflowFormState,
+  formData: FormData,
+): Promise<SessionWorkflowFormState> {
+  await requireAuth();
+
+  const ownership = await assertInstructorOwnsSession(courseId, sessionId);
+
+  if (!ownership.ok) {
+    return { error: ownership.error };
+  }
+
+  const reason = String(formData.get("cancellation_reason") ?? "").trim();
+
+  if (!reason) {
+    return { error: "יש לציין סיבת ביטול." };
+  }
+
+  const supabase = await createServerSupabaseClient();
+
+  const { error: updateError } = await supabase
+    .from("sessions")
+    .update({
+      status: "cancelled",
+      cancellation_reason: reason,
+    })
+    .eq("id", sessionId);
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
+
+  revalidateSessionPaths(courseId);
+  return { success: true };
+}
+
 export async function requestSessionCancellationAction(
   courseId: string,
   sessionId: string,

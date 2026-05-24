@@ -1,6 +1,6 @@
 import type { SessionStatus } from "@/components/sessions/constants";
-import { ACTIVE_OPERATIONAL_STATUSES } from "@/components/sessions/constants";
 import { isSessionDelayed } from "@/lib/sessions/session-delay";
+import { isSessionActiveNow } from "@/lib/sessions/session-active";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { toLocalDateKey } from "@/lib/date/week";
 
@@ -98,10 +98,13 @@ export function buildOperationalDashboardData(
   const todayKey = toLocalDateKey(new Date());
 
   const activeNowSessions = sortByStartTime(
-    rows.filter(
-      (session) =>
-        session.session_date === todayKey &&
-        ACTIVE_OPERATIONAL_STATUSES.includes(session.status),
+    rows.filter((session) =>
+      isSessionActiveNow(
+        session.session_date,
+        session.start_time,
+        session.end_time,
+        session.status,
+      ),
     ),
   );
 

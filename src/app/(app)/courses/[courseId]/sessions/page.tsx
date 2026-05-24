@@ -79,7 +79,6 @@ export default async function CourseSessionsPage({
           <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{course.name}</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
             {showAdminActions ? "ניהול מפגשים" : "מפגשים שלי"}
-            {course.school_year !== "—" ? ` · שנת לימודים ${course.school_year}` : null}
           </p>
         </div>
 
@@ -112,7 +111,10 @@ export default async function CourseSessionsPage({
         </p>
       ) : null}
 
-      <CourseSessionsSummary sessions={sessions} />
+      <CourseSessionsSummary
+        sessions={sessions}
+        targetInstructorHours={course.target_instructor_hours}
+      />
 
       {showAdminActions ? (
         <CreateSessionForm

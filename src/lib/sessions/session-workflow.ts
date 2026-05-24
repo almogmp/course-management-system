@@ -20,26 +20,18 @@ export function canInstructorMarkCompleted(
   endTime: string,
   ownsSession: boolean,
 ): boolean {
-  if (!ownsSession || status === "completed") {
-    return false;
-  }
-
-  if (status === "cancelled" || status === "deferred") {
-    return false;
-  }
-
-  if (status === "planned" || status === "arrived" || status === "in_progress") {
+  if (!ownsSession || status === "completed" || status === "cancelled") {
     return false;
   }
 
   return hasSessionEnded(sessionDate, endTime);
 }
 
-export function canInstructorRequestCancellation(
+export function canInstructorMarkCancelled(
   status: SessionStatus,
   ownsSession: boolean,
 ): boolean {
-  return ownsSession && status === "planned";
+  return ownsSession && status !== "cancelled" && status !== "completed";
 }
 
 export function canAdminApproveCancellation(status: SessionStatus): boolean {

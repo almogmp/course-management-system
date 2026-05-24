@@ -159,6 +159,8 @@ export type Database = {
           company_hours: number;
           status: Database["public"]["Enums"]["course_status"];
           school_year: string;
+          coordinator_id: string | null;
+          target_instructor_hours: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -168,6 +170,7 @@ export type Database = {
           institution_id: string;
           primary_supplier_id: string;
           coordinator: string;
+          coordinator_id?: string | null;
           lead_instructor_id: string;
           instructor_hourly_wage: number;
           company_hourly_rate: number;
@@ -175,6 +178,7 @@ export type Database = {
           company_hours: number;
           status?: Database["public"]["Enums"]["course_status"];
           school_year: string;
+          target_instructor_hours?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -191,6 +195,41 @@ export type Database = {
           company_hours?: number;
           status?: Database["public"]["Enums"]["course_status"];
           school_year?: string;
+          coordinator_id?: string | null;
+          target_instructor_hours?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      institution_coordinators: {
+        Row: {
+          id: string;
+          institution_id: string;
+          full_name: string;
+          phone: string | null;
+          email: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          full_name: string;
+          phone?: string | null;
+          email?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          institution_id?: string;
+          full_name?: string;
+          phone?: string | null;
+          email?: string | null;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };

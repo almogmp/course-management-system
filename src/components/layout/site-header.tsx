@@ -17,6 +17,7 @@ const instructorNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
+  { href: "/admin/instructors", label: "מדריכים" },
   { href: "/admin/instructor-approvals", label: "אישורי מדריכים" },
   { href: "/institutions", label: "מוסדות" },
   { href: "/suppliers", label: "ספקים" },
