@@ -48,12 +48,12 @@ export function ReportsCourseTable({ rows }: ReportsCourseTableProps) {
                 <dd className="font-medium">{formatSessionHours(row.instructorHours)}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">הכנסה בפועל</dt>
-                <dd className="font-medium">{formatCurrency(row.actualRevenue)}</dd>
+                <dt className="text-muted-foreground">תקבול ברוטו</dt>
+                <dd className="font-medium">{formatCurrency(row.actualGrossRevenue)}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">רווח בפועל</dt>
-                <dd className="font-medium">{formatCurrency(row.actualProfit)}</dd>
+                <dt className="text-muted-foreground">רווח נקי</dt>
+                <dd className="font-medium">{formatCurrency(row.actualNetProfit)}</dd>
               </div>
             </dl>
           </li>
@@ -68,10 +68,11 @@ export function ReportsCourseTable({ rows }: ReportsCourseTableProps) {
               <th className="px-4 py-3 font-medium text-muted-foreground">מוסד</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">מדריך</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">כמות מפגשים</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">הכנסה בפועל</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">הכנסה פוטנציאלית</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">שכר מדריכים בפועל</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">רווח בפועל</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">תקבול ברוטו</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">מע״מ</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">תקבול נטו</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">שכר מדריך</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">רווח נקי</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">סטטוס עיקרי</th>
             </tr>
           </thead>
@@ -85,16 +86,19 @@ export function ReportsCourseTable({ rows }: ReportsCourseTableProps) {
                 <td className="px-4 py-3 text-muted-foreground">{row.instructorName}</td>
                 <td className="px-4 py-3 text-muted-foreground">{row.sessionCount}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.actualRevenue)}
+                  {formatCurrency(row.actualGrossRevenue)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.potentialRevenue)}
+                  {formatCurrency(row.actualVatAmount)}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {formatCurrency(row.actualNetRevenueBeforeInstructor)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {formatCurrency(row.actualInstructorPayout)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.actualProfit)}
+                  {formatCurrency(row.actualNetProfit)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {COURSE_STATUS_LABELS[row.courseStatus]}

@@ -9,6 +9,7 @@ import type {
   InstitutionReportRow,
   InstructorReportRow,
   MonthlyReportData,
+  ReportFinancialSummary,
   ReportSessionRecord,
 } from "@/lib/reports/types";
 
@@ -26,6 +27,80 @@ function toReportSessionRecord(record: FinancialSessionRecord): ReportSessionRec
     course_name: record.course_name,
     course_status: "active",
   };
+}
+
+function toReportFinancialSummary(
+  totals: ReturnType<typeof sumFinancialRecords>,
+): ReportFinancialSummary {
+  return {
+    actualGrossRevenue: totals.actualGrossRevenue,
+    potentialGrossRevenue: totals.potentialGrossRevenue,
+    actualVatAmount: totals.actualVatAmount,
+    potentialVatAmount: totals.potentialVatAmount,
+    actualNetRevenueBeforeInstructor: totals.actualNetRevenueBeforeInstructor,
+    potentialNetRevenueBeforeInstructor: totals.potentialNetRevenueBeforeInstructor,
+    actualInstructorPayout: totals.actualInstructorPayout,
+    potentialInstructorPayout: totals.potentialInstructorPayout,
+    actualGrossProfit: totals.actualGrossProfit,
+    potentialGrossProfit: totals.potentialGrossProfit,
+    actualNetProfit: totals.actualNetProfit,
+    potentialNetProfit: totals.potentialNetProfit,
+    actualRevenue: totals.actualRevenue,
+    potentialRevenue: totals.potentialRevenue,
+    actualProfit: totals.actualProfit,
+    potentialProfit: totals.potentialProfit,
+  };
+}
+
+function emptyInstitutionRow(
+  institutionId: string,
+  institutionName: string,
+): InstitutionReportRow {
+  return {
+    institutionId,
+    institutionName,
+    sessionCount: 0,
+    completedCount: 0,
+    cancelledCount: 0,
+    instructorHours: 0,
+    companyHours: 0,
+    actualGrossRevenue: 0,
+    potentialGrossRevenue: 0,
+    actualVatAmount: 0,
+    potentialVatAmount: 0,
+    actualNetRevenueBeforeInstructor: 0,
+    potentialNetRevenueBeforeInstructor: 0,
+    actualInstructorPayout: 0,
+    actualGrossProfit: 0,
+    potentialGrossProfit: 0,
+    actualNetProfit: 0,
+    potentialNetProfit: 0,
+    actualRevenue: 0,
+    potentialRevenue: 0,
+    actualProfit: 0,
+    potentialProfit: 0,
+  };
+}
+
+function addFinancialsToInstitutionRow(
+  row: InstitutionReportRow,
+  financials: FinancialSessionRecord["financials"],
+): void {
+  row.actualGrossRevenue += financials.actualGrossRevenue;
+  row.potentialGrossRevenue += financials.potentialGrossRevenue;
+  row.actualVatAmount += financials.actualVatAmount;
+  row.potentialVatAmount += financials.potentialVatAmount;
+  row.actualNetRevenueBeforeInstructor += financials.actualNetRevenueBeforeInstructor;
+  row.potentialNetRevenueBeforeInstructor += financials.potentialNetRevenueBeforeInstructor;
+  row.actualInstructorPayout += financials.actualInstructorPayout;
+  row.actualGrossProfit += financials.actualGrossProfit;
+  row.potentialGrossProfit += financials.potentialGrossProfit;
+  row.actualNetProfit += financials.actualNetProfit;
+  row.potentialNetProfit += financials.potentialNetProfit;
+  row.actualRevenue += financials.actualRevenue;
+  row.potentialRevenue += financials.potentialRevenue;
+  row.actualProfit += financials.actualProfit;
+  row.potentialProfit += financials.potentialProfit;
 }
 
 export function buildMonthlyReportDataFromFinancial(
@@ -69,14 +144,7 @@ export function buildMonthlyReportDataFromFinancial(
       cancelledCount: overview.cancelledCount,
       instructorHours: overview.instructorHours,
       companyHours: overview.companyHours,
-      financial: {
-        actualRevenue: financialTotals.actualRevenue,
-        potentialRevenue: financialTotals.potentialRevenue,
-        actualInstructorPayout: financialTotals.actualInstructorPayout,
-        potentialInstructorPayout: financialTotals.potentialInstructorPayout,
-        actualProfit: financialTotals.actualProfit,
-        potentialProfit: financialTotals.potentialProfit,
-      },
+      financial: toReportFinancialSummary(financialTotals),
     },
     instructorRows,
     institutionRows,
@@ -93,27 +161,13 @@ function aggregateInstitutionFinancial(
     const institutionId = record.institution_id ?? "unknown";
     const institutionName = record.institution_name ?? "ללא מוסד";
 
-    const existing = byInstitution.get(institutionId) ?? {
-      institutionId,
-      institutionName,
-      sessionCount: 0,
-      completedCount: 0,
-      cancelledCount: 0,
-      instructorHours: 0,
-      companyHours: 0,
-      actualRevenue: 0,
-      potentialRevenue: 0,
-      actualProfit: 0,
-      potentialProfit: 0,
-    };
+    const existing =
+      byInstitution.get(institutionId) ?? emptyInstitutionRow(institutionId, institutionName);
 
     existing.sessionCount += 1;
     existing.instructorHours += record.instructor_hours;
     existing.companyHours += record.company_hours;
-    existing.actualRevenue += record.financials.actualRevenue;
-    existing.potentialRevenue += record.financials.potentialRevenue;
-    existing.actualProfit += record.financials.actualProfit;
-    existing.potentialProfit += record.financials.potentialProfit;
+    addFinancialsToInstitutionRow(existing, record.financials);
 
     if (record.status === "completed") {
       existing.completedCount += 1;
@@ -142,18 +196,30 @@ function aggregateCourseFinancial(records: FinancialSessionRecord[]): CourseRepo
       instructorHours: 0,
       companyHours: 0,
       courseStatus: "active" as const,
+      actualGrossRevenue: 0,
+      potentialGrossRevenue: 0,
+      actualVatAmount: 0,
+      actualNetRevenueBeforeInstructor: 0,
+      actualInstructorPayout: 0,
+      actualGrossProfit: 0,
+      actualNetProfit: 0,
       actualRevenue: 0,
       potentialRevenue: 0,
-      actualInstructorPayout: 0,
       actualProfit: 0,
     };
 
     existing.sessionCount += 1;
     existing.instructorHours += record.instructor_hours;
     existing.companyHours += record.company_hours;
+    existing.actualGrossRevenue += record.financials.actualGrossRevenue;
+    existing.potentialGrossRevenue += record.financials.potentialGrossRevenue;
+    existing.actualVatAmount += record.financials.actualVatAmount;
+    existing.actualNetRevenueBeforeInstructor += record.financials.actualNetRevenueBeforeInstructor;
+    existing.actualInstructorPayout += record.financials.actualInstructorPayout;
+    existing.actualGrossProfit += record.financials.actualGrossProfit;
+    existing.actualNetProfit += record.financials.actualNetProfit;
     existing.actualRevenue += record.financials.actualRevenue;
     existing.potentialRevenue += record.financials.potentialRevenue;
-    existing.actualInstructorPayout += record.financials.actualInstructorPayout;
     existing.actualProfit += record.financials.actualProfit;
 
     byCourse.set(record.course_id, existing);

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { HDate, HebrewCalendar, Event } from "@hebcal/core";
+import { Event, gematriya, HDate, HebrewCalendar } from "@hebcal/core";
 
 export type HebrewDayInfo = {
   hebrewDateLabel: string;
@@ -17,12 +17,28 @@ function normalizeTimeForKey(time: string): string {
   return time.slice(0, 5);
 }
 
-/** Gregorian YYYY-MM-DD → Hebrew label e.g. כ׳ אלול תשפ״ו */
+/** Hebrew month name(s) from gematriya render, without the trailing year token. */
+function hebrewMonthLabel(hd: HDate): string {
+  const parts = hd.renderGematriya(true).trim().split(/\s+/);
+
+  if (parts.length < 2) {
+    return "";
+  }
+
+  const yearIndex = parts.findIndex((part) => /^ת/.test(part));
+  const monthParts = yearIndex >= 0 ? parts.slice(1, yearIndex) : parts.slice(1);
+
+  return monthParts.join(" ");
+}
+
+/** Gregorian YYYY-MM-DD → Hebrew label: day + month only (e.g. ט׳ סיוון). */
 export function formatHebrewDateLabel(dateKey: string): string {
   const [year, month, day] = dateKey.split("-").map(Number);
   const hd = new HDate(new Date(year, month - 1, day));
+  const dayLabel = gematriya(hd.getDate());
+  const monthLabel = hebrewMonthLabel(hd);
 
-  return hd.render("he");
+  return monthLabel ? `${dayLabel} ${monthLabel}` : dayLabel;
 }
 
 function buildHolidayMap(startDate: string, endDate: string): Map<string, string[]> {

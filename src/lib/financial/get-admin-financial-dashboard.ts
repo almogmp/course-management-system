@@ -7,10 +7,12 @@ import { getTodayDateKey } from "@/lib/financial/period-bounds";
 import { sumFinancialRecords } from "@/lib/financial/financial-session-record";
 
 export type AdminFinancialDashboardStats = {
-  todayActualRevenue: number;
-  todayPotentialRevenue: number;
-  monthActualProfit: number;
-  monthPotentialProfit: number;
+  todayActualGrossRevenue: number;
+  todayPotentialGrossRevenue: number;
+  monthActualNetProfit: number;
+  monthPotentialNetProfit: number;
+  monthActualGrossProfit: number;
+  monthPotentialGrossProfit: number;
   monthActualInstructorPayout: number;
   monthPotentialInstructorPayout: number;
   missingRateSessionCount: number;
@@ -34,10 +36,12 @@ export async function getAdminFinancialDashboard(
   ).length;
 
   return {
-    todayActualRevenue: todayTotals.actualRevenue,
-    todayPotentialRevenue: todayTotals.potentialRevenue,
-    monthActualProfit: monthTotals.actualProfit,
-    monthPotentialProfit: monthTotals.potentialProfit,
+    todayActualGrossRevenue: todayTotals.actualGrossRevenue,
+    todayPotentialGrossRevenue: todayTotals.potentialGrossRevenue,
+    monthActualNetProfit: monthTotals.actualNetProfit,
+    monthPotentialNetProfit: monthTotals.potentialNetProfit,
+    monthActualGrossProfit: monthTotals.actualGrossProfit,
+    monthPotentialGrossProfit: monthTotals.potentialGrossProfit,
     monthActualInstructorPayout: monthTotals.actualInstructorPayout,
     monthPotentialInstructorPayout: monthTotals.potentialInstructorPayout,
     missingRateSessionCount,

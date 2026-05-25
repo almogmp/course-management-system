@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { AdminReportsFilters } from "@/components/admin-reports/admin-reports-filters";
 import { AdminReportsSummaryCards } from "@/components/admin-reports/admin-reports-summary-cards";
@@ -9,9 +10,11 @@ import {
   buildAdminFinancialReport,
   getAdminReportFilterOptions,
 } from "@/lib/admin-reports/build-report";
-import { parseAdminReportFilters } from "@/lib/admin-reports/filters";
 import type { AdminReportSearchParams } from "@/lib/admin-reports/filters";
+import { parseAdminReportFilters } from "@/lib/admin-reports/search-params";
 import { requireAdmin } from "@/lib/auth/guards";
+
+export const dynamic = "force-dynamic";
 
 type AdminReportsPageProps = {
   searchParams?: AdminReportSearchParams;
@@ -20,7 +23,7 @@ type AdminReportsPageProps = {
 export default async function AdminReportsPage({ searchParams }: AdminReportsPageProps) {
   await requireAdmin();
 
-  const filters = parseAdminReportFilters(searchParams);
+  const filters = parseAdminReportFilters(searchParams ?? {});
   const filterOptions = await getAdminReportFilterOptions();
   const report = await buildAdminFinancialReport(filters, filterOptions);
 
@@ -42,14 +45,20 @@ export default async function AdminReportsPage({ searchParams }: AdminReportsPag
       </header>
 
       <div className="print-hidden">
-        <AdminReportsFilters filters={filters} options={filterOptions} />
+        <AdminReportsFilters
+          filters={filters}
+          options={filterOptions}
+          rowCount={report.rows.length}
+        />
       </div>
 
-      <AdminReportsToolbar report={report} />
+      <Suspense fallback={null}>
+        <AdminReportsToolbar report={report} />
+      </Suspense>
 
       <div id="admin-reports-print-area" className="space-y-6">
-        <AdminReportsSummaryCards summary={report.summary} />
-        <AdminReportsTable rows={report.rows} />
+        <AdminReportsSummaryCards report={report} />
+        <AdminReportsTable report={report} />
       </div>
     </Container>
   );

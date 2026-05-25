@@ -91,6 +91,66 @@
     text-wrap: balance;
   }
 
+  .report-print-document {
+    color: #18181b;
+  }
+
+  .report-print-header {
+    page-break-after: avoid;
+  }
+
+  .report-print-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .report-print-summary-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .report-print-card {
+    border: 1px solid #e4e4e7;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    text-align: center;
+    background: #fafafa;
+  }
+
+  .report-print-table-wrap {
+    overflow: visible;
+    border: 1px solid #e4e4e7;
+    border-radius: 0.5rem;
+  }
+
+  .report-print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+  }
+
+  .report-print-table th,
+  .report-print-table td {
+    border: 1px solid #e4e4e7;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .report-print-table thead th {
+    background: #f4f4f5;
+  }
+
+  .report-print-totals td {
+    background: #f4f4f5;
+    font-weight: 600;
+  }
+
+  .report-print-table tr {
+    page-break-inside: avoid;
+  }
+
   @media print {
     .print-hidden {
       display: none !important;
@@ -102,6 +162,14 @@
 
     body {
       background: white !important;
+    }
+
+    .report-print-document {
+      max-width: none !important;
+    }
+
+    .report-print-table {
+      font-size: 9pt;
     }
   }
 }

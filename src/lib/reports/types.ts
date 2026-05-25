@@ -19,11 +19,25 @@ export type ReportSessionRecord = {
 };
 
 export type ReportFinancialSummary = {
-  actualRevenue: number;
-  potentialRevenue: number;
+  actualGrossRevenue: number;
+  potentialGrossRevenue: number;
+  actualVatAmount: number;
+  potentialVatAmount: number;
+  actualNetRevenueBeforeInstructor: number;
+  potentialNetRevenueBeforeInstructor: number;
   actualInstructorPayout: number;
   potentialInstructorPayout: number;
+  actualGrossProfit: number;
+  potentialGrossProfit: number;
+  actualNetProfit: number;
+  potentialNetProfit: number;
+  /** @deprecated Use actualGrossRevenue */
+  actualRevenue: number;
+  /** @deprecated Use potentialGrossRevenue */
+  potentialRevenue: number;
+  /** @deprecated Use actualGrossProfit */
   actualProfit: number;
+  /** @deprecated Use potentialGrossProfit */
   potentialProfit: number;
 };
 
@@ -44,9 +58,24 @@ export type InstitutionReportRow = {
   cancelledCount: number;
   instructorHours: number;
   companyHours: number;
+  actualGrossRevenue: number;
+  potentialGrossRevenue: number;
+  actualVatAmount: number;
+  potentialVatAmount: number;
+  actualNetRevenueBeforeInstructor: number;
+  potentialNetRevenueBeforeInstructor: number;
+  actualInstructorPayout: number;
+  actualGrossProfit: number;
+  potentialGrossProfit: number;
+  actualNetProfit: number;
+  potentialNetProfit: number;
+  /** @deprecated */
   actualRevenue: number;
+  /** @deprecated */
   potentialRevenue: number;
+  /** @deprecated */
   actualProfit: number;
+  /** @deprecated */
   potentialProfit: number;
 };
 
@@ -59,9 +88,18 @@ export type CourseReportRow = {
   instructorHours: number;
   companyHours: number;
   courseStatus: CourseStatus;
-  actualRevenue: number;
-  potentialRevenue: number;
+  actualGrossRevenue: number;
+  potentialGrossRevenue: number;
+  actualVatAmount: number;
+  actualNetRevenueBeforeInstructor: number;
   actualInstructorPayout: number;
+  actualGrossProfit: number;
+  actualNetProfit: number;
+  /** @deprecated */
+  actualRevenue: number;
+  /** @deprecated */
+  potentialRevenue: number;
+  /** @deprecated */
   actualProfit: number;
 };
 

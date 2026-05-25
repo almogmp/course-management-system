@@ -1,8 +1,10 @@
 import type { SessionStatus } from "@/components/sessions/constants";
+import { roundMoney } from "@/lib/financial/round-money";
 import {
   countsAsActualFinancial,
   countsAsPotentialFinancial,
 } from "@/lib/financial/status";
+import { computeVatFinancialAmounts } from "@/lib/financial/vat";
 
 export type CourseRateDefaults = {
   institutionHourlyRate: number;
@@ -27,13 +29,112 @@ export type SessionFinancialBreakdown = {
   effectiveInstructorHourlyRate: number;
   missingInstitutionRate: boolean;
   missingInstructorRate: boolean;
-  potentialRevenue: number;
-  actualRevenue: number;
+  /** Gross institution charge (incl. VAT) — potential status bucket */
+  potentialGrossRevenue: number;
+  /** Gross institution charge (incl. VAT) — actual/completed bucket */
+  actualGrossRevenue: number;
+  potentialVatAmount: number;
+  actualVatAmount: number;
+  potentialNetRevenueBeforeInstructor: number;
+  actualNetRevenueBeforeInstructor: number;
   potentialInstructorPayout: number;
   actualInstructorPayout: number;
+  potentialGrossProfit: number;
+  actualGrossProfit: number;
+  potentialNetProfit: number;
+  actualNetProfit: number;
+  /** @deprecated Use actualGrossRevenue */
+  potentialRevenue: number;
+  /** @deprecated Use actualGrossRevenue */
+  actualRevenue: number;
+  /** @deprecated Use actualGrossProfit */
   potentialProfit: number;
+  /** @deprecated Use actualGrossProfit */
   actualProfit: number;
 };
+
+function grossRevenueForSession(
+  companyHours: number,
+  institutionHourlyRate: number,
+): number {
+  return roundMoney(companyHours * institutionHourlyRate);
+}
+
+function instructorPayoutForSession(
+  instructorHours: number,
+  instructorHourlyRate: number,
+): number {
+  return roundMoney(instructorHours * instructorHourlyRate);
+}
+
+function emptyFinancialBuckets(): Pick<
+  SessionFinancialBreakdown,
+  | "potentialGrossRevenue"
+  | "actualGrossRevenue"
+  | "potentialVatAmount"
+  | "actualVatAmount"
+  | "potentialNetRevenueBeforeInstructor"
+  | "actualNetRevenueBeforeInstructor"
+  | "potentialInstructorPayout"
+  | "actualInstructorPayout"
+  | "potentialGrossProfit"
+  | "actualGrossProfit"
+  | "potentialNetProfit"
+  | "actualNetProfit"
+  | "potentialRevenue"
+  | "actualRevenue"
+  | "potentialProfit"
+  | "actualProfit"
+> {
+  return {
+    potentialGrossRevenue: 0,
+    actualGrossRevenue: 0,
+    potentialVatAmount: 0,
+    actualVatAmount: 0,
+    potentialNetRevenueBeforeInstructor: 0,
+    actualNetRevenueBeforeInstructor: 0,
+    potentialInstructorPayout: 0,
+    actualInstructorPayout: 0,
+    potentialGrossProfit: 0,
+    actualGrossProfit: 0,
+    potentialNetProfit: 0,
+    actualNetProfit: 0,
+    potentialRevenue: 0,
+    actualRevenue: 0,
+    potentialProfit: 0,
+    actualProfit: 0,
+  };
+}
+
+function applyVatBucket(
+  buckets: ReturnType<typeof emptyFinancialBuckets>,
+  kind: "potential" | "actual",
+  gross: number,
+  payout: number,
+): void {
+  const amounts = computeVatFinancialAmounts(gross, payout);
+
+  if (kind === "potential") {
+    buckets.potentialGrossRevenue = amounts.grossRevenue;
+    buckets.potentialVatAmount = amounts.vatAmount;
+    buckets.potentialNetRevenueBeforeInstructor = amounts.netRevenueBeforeInstructor;
+    buckets.potentialInstructorPayout = amounts.instructorPayout;
+    buckets.potentialGrossProfit = amounts.grossProfit;
+    buckets.potentialNetProfit = amounts.netProfit;
+    buckets.potentialRevenue = amounts.grossRevenue;
+    buckets.potentialProfit = amounts.grossProfit;
+    return;
+  }
+
+  buckets.actualGrossRevenue = amounts.grossRevenue;
+  buckets.actualVatAmount = amounts.vatAmount;
+  buckets.actualNetRevenueBeforeInstructor = amounts.netRevenueBeforeInstructor;
+  buckets.actualInstructorPayout = amounts.instructorPayout;
+  buckets.actualGrossProfit = amounts.grossProfit;
+  buckets.actualNetProfit = amounts.netProfit;
+  buckets.actualRevenue = amounts.grossRevenue;
+  buckets.actualProfit = amounts.grossProfit;
+}
 
 export function getEffectiveRatesFromParts(
   course: CourseRateDefaults,
@@ -90,33 +191,32 @@ export function computeSessionFinancialsFromParts(
     missingInstructorRate,
   } = getEffectiveRatesFromParts(course, overrides);
 
-  const potentialRevenue = countsAsPotentialFinancial(session.status)
-    ? session.company_hours * effectiveInstitutionHourlyRate
-    : 0;
+  const buckets = emptyFinancialBuckets();
 
-  const actualRevenue = countsAsActualFinancial(session.status)
-    ? session.company_hours * effectiveInstitutionHourlyRate
-    : 0;
+  if (countsAsPotentialFinancial(session.status)) {
+    const gross = grossRevenueForSession(session.company_hours, effectiveInstitutionHourlyRate);
+    const payout = instructorPayoutForSession(
+      session.instructor_hours,
+      effectiveInstructorHourlyRate,
+    );
+    applyVatBucket(buckets, "potential", gross, payout);
+  }
 
-  const potentialInstructorPayout = countsAsPotentialFinancial(session.status)
-    ? session.instructor_hours * effectiveInstructorHourlyRate
-    : 0;
-
-  const actualInstructorPayout = countsAsActualFinancial(session.status)
-    ? session.instructor_hours * effectiveInstructorHourlyRate
-    : 0;
+  if (countsAsActualFinancial(session.status)) {
+    const gross = grossRevenueForSession(session.company_hours, effectiveInstitutionHourlyRate);
+    const payout = instructorPayoutForSession(
+      session.instructor_hours,
+      effectiveInstructorHourlyRate,
+    );
+    applyVatBucket(buckets, "actual", gross, payout);
+  }
 
   return {
     effectiveInstitutionHourlyRate,
     effectiveInstructorHourlyRate,
     missingInstitutionRate,
     missingInstructorRate,
-    potentialRevenue,
-    actualRevenue,
-    potentialInstructorPayout,
-    actualInstructorPayout,
-    potentialProfit: potentialRevenue - potentialInstructorPayout,
-    actualProfit: actualRevenue - actualInstructorPayout,
+    ...buckets,
   };
 }
 
@@ -131,21 +231,26 @@ export function sumFinancialBreakdowns(
 > {
   return breakdowns.reduce(
     (acc, row) => ({
-      potentialRevenue: acc.potentialRevenue + row.potentialRevenue,
-      actualRevenue: acc.actualRevenue + row.actualRevenue,
+      potentialGrossRevenue: acc.potentialGrossRevenue + row.potentialGrossRevenue,
+      actualGrossRevenue: acc.actualGrossRevenue + row.actualGrossRevenue,
+      potentialVatAmount: acc.potentialVatAmount + row.potentialVatAmount,
+      actualVatAmount: acc.actualVatAmount + row.actualVatAmount,
+      potentialNetRevenueBeforeInstructor:
+        acc.potentialNetRevenueBeforeInstructor + row.potentialNetRevenueBeforeInstructor,
+      actualNetRevenueBeforeInstructor:
+        acc.actualNetRevenueBeforeInstructor + row.actualNetRevenueBeforeInstructor,
       potentialInstructorPayout: acc.potentialInstructorPayout + row.potentialInstructorPayout,
       actualInstructorPayout: acc.actualInstructorPayout + row.actualInstructorPayout,
+      potentialGrossProfit: acc.potentialGrossProfit + row.potentialGrossProfit,
+      actualGrossProfit: acc.actualGrossProfit + row.actualGrossProfit,
+      potentialNetProfit: acc.potentialNetProfit + row.potentialNetProfit,
+      actualNetProfit: acc.actualNetProfit + row.actualNetProfit,
+      potentialRevenue: acc.potentialRevenue + row.potentialRevenue,
+      actualRevenue: acc.actualRevenue + row.actualRevenue,
       potentialProfit: acc.potentialProfit + row.potentialProfit,
       actualProfit: acc.actualProfit + row.actualProfit,
     }),
-    {
-      potentialRevenue: 0,
-      actualRevenue: 0,
-      potentialInstructorPayout: 0,
-      actualInstructorPayout: 0,
-      potentialProfit: 0,
-      actualProfit: 0,
-    },
+    emptyFinancialBuckets(),
   );
 }
 

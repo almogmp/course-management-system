@@ -29,9 +29,12 @@ export type SessionsMonthSummary = {
   activeCount: number;
   cancelledCount: number;
   deferredCount: number;
-  totalRevenue?: number;
+  totalGrossRevenue?: number;
+  totalVat?: number;
+  totalNetRevenue?: number;
   totalInstructorPayout?: number;
-  totalProfit?: number;
+  totalGrossProfit?: number;
+  totalNetProfit?: number;
 };
 
 function isActiveStatus(status: SessionStatus): boolean {
@@ -54,9 +57,12 @@ export function computeSessionsMonthSummary(
   };
 
   if (options.includeFinancials) {
-    summary.totalRevenue = 0;
+    summary.totalGrossRevenue = 0;
+    summary.totalVat = 0;
+    summary.totalNetRevenue = 0;
     summary.totalInstructorPayout = 0;
-    summary.totalProfit = 0;
+    summary.totalGrossProfit = 0;
+    summary.totalNetProfit = 0;
   }
 
   for (const row of rows) {
@@ -94,9 +100,12 @@ export function computeSessionsMonthSummary(
     );
 
     if (countsAsActualFinancial(row.status)) {
-      summary.totalRevenue! += financials.actualRevenue;
+      summary.totalGrossRevenue! += financials.actualGrossRevenue;
+      summary.totalVat! += financials.actualVatAmount;
+      summary.totalNetRevenue! += financials.actualNetRevenueBeforeInstructor;
       summary.totalInstructorPayout! += financials.actualInstructorPayout;
-      summary.totalProfit! += financials.actualProfit;
+      summary.totalGrossProfit! += financials.actualGrossProfit;
+      summary.totalNetProfit! += financials.actualNetProfit;
     }
   }
 

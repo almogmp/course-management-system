@@ -55,35 +55,49 @@ export function SessionsMonthSummaryPanel({
   const financialCards: SummaryCard[] = showFinancials
     ? [
         {
-          label: "סה״כ הכנסות",
-          value: formatCurrency(summary.totalRevenue ?? 0),
+          label: "תקבול ברוטו",
+          value: formatCurrency(summary.totalGrossRevenue ?? 0),
         },
         {
-          label: "סה״כ שכר מדריכים",
+          label: "מע״מ",
+          value: formatCurrency(summary.totalVat ?? 0),
+        },
+        {
+          label: "תקבול נטו לפני מדריך",
+          value: formatCurrency(summary.totalNetRevenue ?? 0),
+        },
+        {
+          label: "שכר מדריך",
           value: formatCurrency(summary.totalInstructorPayout ?? 0),
         },
         {
-          label: "סה״כ רווח",
-          value: formatCurrency(summary.totalProfit ?? 0),
+          label: "רווח ברוטו",
+          value: formatCurrency(summary.totalGrossProfit ?? 0),
+        },
+        {
+          label: "רווח נקי",
+          value: formatCurrency(summary.totalNetProfit ?? 0),
         },
       ]
     : [];
 
   const instructorCards = showFinancials
     ? baseCards
-    : baseCards.filter(
-        (card) => card.label !== "סה״כ שעות חברה",
-      );
+    : baseCards.filter((card) => card.label !== "סה״כ שעות חברה");
 
   return (
     <section aria-labelledby="sessions-month-summary-heading" className="space-y-3">
-      <h2 id="sessions-month-summary-heading" className="text-center text-base font-semibold text-foreground md:text-start">
+      <h2
+        id="sessions-month-summary-heading"
+        className="text-center text-base font-semibold text-foreground md:text-start"
+      >
         סיכום חודשי — {monthLabel}
       </h2>
       <SummaryCardGrid cards={[...instructorCards, ...financialCards]} />
       {showFinancials ? (
         <p className="text-center text-xs text-muted-foreground md:text-start">
-          הכנסות, שכר ורווח מחושבים ממפגשים שבוצעו בלבד; מפגשים שבוטלו אינם נכללים בתמחור.
+          סכומים כספיים מחושבים ממפגשים שבוצעו בלבד (כולל מע״מ 18% בתקבול ברוטו); מפגשים שבוטלו
+          אינם נכללים.
         </p>
       ) : null}
     </section>

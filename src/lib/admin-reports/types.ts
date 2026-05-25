@@ -17,6 +17,15 @@ export type AdminReportFilters = {
   status: AdminReportStatusFilter;
 };
 
+export type AdminReportSessionFinancials = {
+  grossRevenue: number;
+  vatAmount: number;
+  netRevenueBeforeInstructor: number;
+  instructorPayout: number;
+  grossProfit: number;
+  netProfit: number;
+};
+
 export type AdminReportSessionRow = {
   id: string;
   sessionDate: string;
@@ -35,9 +44,7 @@ export type AdminReportSessionRow = {
   companyHours: number;
   institutionHourlyRate: number;
   instructorHourlyRate: number;
-  revenue: number;
-  instructorPayout: number;
-  profit: number;
+  financials: AdminReportSessionFinancials;
   notes: string;
 };
 
@@ -45,9 +52,12 @@ export type AdminReportSummary = {
   totalSessions: number;
   instructorHours: number;
   companyHours: number;
-  totalRevenue: number;
+  totalGrossRevenue: number;
+  totalVat: number;
+  totalNetRevenue: number;
   totalInstructorPayout: number;
-  totalProfit: number;
+  totalGrossProfit: number;
+  totalNetProfit: number;
   cancelledCount: number;
   deferredCount: number;
 };

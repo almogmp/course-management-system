@@ -8,32 +8,37 @@ type AdminFinancialStatsCardsProps = {
 export function AdminFinancialStatsCards({ stats }: AdminFinancialStatsCardsProps) {
   const cards = [
     {
-      title: "הכנסה בפועל היום",
-      value: formatCurrency(stats.todayActualRevenue),
-      description: "מפגשים שבוצעו היום",
+      title: "תקבול ברוטו היום (בפועל)",
+      value: formatCurrency(stats.todayActualGrossRevenue),
+      description: "מפגשים שבוצעו היום — כולל מע״מ",
     },
     {
-      title: "הכנסה פוטנציאלית היום",
-      value: formatCurrency(stats.todayPotentialRevenue),
-      description: "כולל מתוכננים (ללא בוטלים/ממתינים)",
+      title: "תקבול ברוטו היום (פוטנציאלי)",
+      value: formatCurrency(stats.todayPotentialGrossRevenue),
+      description: "כולל מתוכננים פעילים היום",
     },
     {
-      title: "רווח בפועל החודש",
-      value: formatCurrency(stats.monthActualProfit),
-      description: "הכנסה פחות שכר מדריכים — בוצע",
+      title: "רווח נקי החודש (בפועל)",
+      value: formatCurrency(stats.monthActualNetProfit),
+      description: "נטו לפני מדריך פחות שכר — מפגשים שבוצעו",
     },
     {
-      title: "רווח פוטנציאלי החודש",
-      value: formatCurrency(stats.monthPotentialProfit),
-      description: "תחזית לפי מפגשים פעילים בחודש",
+      title: "רווח נקי החודש (פוטנציאלי)",
+      value: formatCurrency(stats.monthPotentialNetProfit),
+      description: "תחזית לפי מפגשים פעילים/מתוכננים",
     },
     {
-      title: "שכר מדריכים בפועל החודש",
+      title: "רווח ברוטו החודש (בפועל)",
+      value: formatCurrency(stats.monthActualGrossProfit),
+      description: "תקבול ברוטו פחות שכר מדריך",
+    },
+    {
+      title: "שכר מדריכים החודש (בפועל)",
       value: formatCurrency(stats.monthActualInstructorPayout),
-      description: "מפגשים שבוצעו בלבד",
+      description: "ללא ניכוי מע״מ — מפגשים שבוצעו",
     },
     {
-      title: "שכר מדריכים פוטנציאלי החודש",
+      title: "שכר מדריכים החודש (פוטנציאלי)",
       value: formatCurrency(stats.monthPotentialInstructorPayout),
       description: "כולל מתוכננים בחודש",
     },

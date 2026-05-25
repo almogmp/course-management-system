@@ -7,15 +7,24 @@ import type { AdminReportFilterOptions, AdminReportFilters } from "@/lib/admin-r
 type AdminReportsFiltersProps = {
   filters: AdminReportFilters;
   options: AdminReportFilterOptions;
+  rowCount: number;
 };
 
 const inputClassName =
   "min-h-11 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm";
 
-export function AdminReportsFilters({ filters, options }: AdminReportsFiltersProps) {
+const submitClassName =
+  "inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:w-auto";
+
+const secondarySubmitClassName =
+  "inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:w-auto";
+
+export function AdminReportsFilters({ filters, options, rowCount }: AdminReportsFiltersProps) {
   return (
     <form
+      id="admin-report-filters"
       method="get"
+      action="/admin/reports"
       className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
     >
       <div className="space-y-2">
@@ -117,13 +126,16 @@ export function AdminReportsFilters({ filters, options }: AdminReportsFiltersPro
           ))}
         </select>
       </div>
-      <div className="flex items-end sm:col-span-2 lg:col-span-3 xl:col-span-6">
-        <button
-          type="submit"
-          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:w-auto"
-        >
+      <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-3 xl:col-span-6 sm:flex-row sm:flex-wrap sm:items-end">
+        <button type="submit" className={submitClassName}>
+          החל סינון
+        </button>
+        <button type="submit" formAction="/admin/reports/preview" className={secondarySubmitClassName}>
           הצג דוח
         </button>
+        <p className="w-full text-center text-xs text-muted-foreground sm:text-start">
+          {rowCount} שורות בטבלה לפי הסינון הנוכחי
+        </p>
       </div>
     </form>
   );

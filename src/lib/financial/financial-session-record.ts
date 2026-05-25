@@ -64,20 +64,43 @@ export function buildFinancialSessionRecord(input: {
 export function sumFinancialRecords(records: FinancialSessionRecord[]) {
   return records.reduce(
     (acc, record) => ({
-      potentialRevenue: acc.potentialRevenue + record.financials.potentialRevenue,
-      actualRevenue: acc.actualRevenue + record.financials.actualRevenue,
+      potentialGrossRevenue: acc.potentialGrossRevenue + record.financials.potentialGrossRevenue,
+      actualGrossRevenue: acc.actualGrossRevenue + record.financials.actualGrossRevenue,
+      potentialVatAmount: acc.potentialVatAmount + record.financials.potentialVatAmount,
+      actualVatAmount: acc.actualVatAmount + record.financials.actualVatAmount,
+      potentialNetRevenueBeforeInstructor:
+        acc.potentialNetRevenueBeforeInstructor +
+        record.financials.potentialNetRevenueBeforeInstructor,
+      actualNetRevenueBeforeInstructor:
+        acc.actualNetRevenueBeforeInstructor + record.financials.actualNetRevenueBeforeInstructor,
       potentialInstructorPayout:
         acc.potentialInstructorPayout + record.financials.potentialInstructorPayout,
       actualInstructorPayout:
         acc.actualInstructorPayout + record.financials.actualInstructorPayout,
+      potentialGrossProfit: acc.potentialGrossProfit + record.financials.potentialGrossProfit,
+      actualGrossProfit: acc.actualGrossProfit + record.financials.actualGrossProfit,
+      potentialNetProfit: acc.potentialNetProfit + record.financials.potentialNetProfit,
+      actualNetProfit: acc.actualNetProfit + record.financials.actualNetProfit,
+      potentialRevenue: acc.potentialRevenue + record.financials.potentialRevenue,
+      actualRevenue: acc.actualRevenue + record.financials.actualRevenue,
       potentialProfit: acc.potentialProfit + record.financials.potentialProfit,
       actualProfit: acc.actualProfit + record.financials.actualProfit,
     }),
     {
-      potentialRevenue: 0,
-      actualRevenue: 0,
+      potentialGrossRevenue: 0,
+      actualGrossRevenue: 0,
+      potentialVatAmount: 0,
+      actualVatAmount: 0,
+      potentialNetRevenueBeforeInstructor: 0,
+      actualNetRevenueBeforeInstructor: 0,
       potentialInstructorPayout: 0,
       actualInstructorPayout: 0,
+      potentialGrossProfit: 0,
+      actualGrossProfit: 0,
+      potentialNetProfit: 0,
+      actualNetProfit: 0,
+      potentialRevenue: 0,
+      actualRevenue: 0,
       potentialProfit: 0,
       actualProfit: 0,
     },

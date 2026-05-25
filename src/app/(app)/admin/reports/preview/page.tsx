@@ -1,17 +1,23 @@
-import { AdminReportsPreviewActions } from "@/components/admin-reports/admin-reports-preview-actions";
+import { Suspense } from "react";
+
+import { AdminReportsPreviewToolbar } from "@/components/admin-reports/admin-reports-preview-toolbar";
 import { AdminReportsPrintDocument } from "@/components/admin-reports/admin-reports-print-document";
 import { Container } from "@/components/ui/container";
 import {
   buildAdminFinancialReport,
   getAdminReportFilterOptions,
 } from "@/lib/admin-reports/build-report";
-import { parseAdminReportFilters } from "@/lib/admin-reports/filters";
 import type { AdminReportSearchParams } from "@/lib/admin-reports/filters";
-import { buildAdminReportQuery } from "@/lib/admin-reports/report-url";
+import {
+  buildAdminReportQuery,
+  parseAdminReportFilters,
+} from "@/lib/admin-reports/search-params";
 import { requireAdmin } from "@/lib/auth/guards";
 
+export const dynamic = "force-dynamic";
+
 type AdminReportsPreviewPageProps = {
-  searchParams?: AdminReportSearchParams & { print?: string };
+  searchParams?: AdminReportSearchParams;
 };
 
 export default async function AdminReportsPreviewPage({
@@ -19,11 +25,10 @@ export default async function AdminReportsPreviewPage({
 }: AdminReportsPreviewPageProps) {
   await requireAdmin();
 
-  const filters = parseAdminReportFilters(searchParams);
+  const filters = parseAdminReportFilters(searchParams ?? {});
   const filterOptions = await getAdminReportFilterOptions();
   const report = await buildAdminFinancialReport(filters, filterOptions);
   const backHref = `/admin/reports?${buildAdminReportQuery(filters)}`;
-  const autoPrint = searchParams?.print === "1";
 
   const generatedAt = new Intl.DateTimeFormat("he-IL", {
     dateStyle: "long",
@@ -31,8 +36,13 @@ export default async function AdminReportsPreviewPage({
   }).format(new Date());
 
   return (
-    <Container as="main" className="flex flex-1 flex-col gap-6 py-8 print:py-4">
-      <AdminReportsPreviewActions backHref={backHref} autoPrint={autoPrint} />
+    <Container
+      as="main"
+      className="flex flex-1 flex-col gap-6 bg-background py-8 print:max-w-none print:py-4"
+    >
+      <Suspense fallback={null}>
+        <AdminReportsPreviewToolbar report={report} backHref={backHref} />
+      </Suspense>
       <AdminReportsPrintDocument report={report} generatedAt={generatedAt} />
     </Container>
   );

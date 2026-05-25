@@ -48,12 +48,12 @@ export function ReportsInstitutionTable({ rows }: ReportsInstitutionTableProps) 
                 <dd className="font-medium">{formatSessionHours(row.instructorHours)}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">הכנסה בפועל</dt>
-                <dd className="font-medium">{formatCurrency(row.actualRevenue)}</dd>
+                <dt className="text-muted-foreground">תקבול ברוטו</dt>
+                <dd className="font-medium">{formatCurrency(row.actualGrossRevenue)}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">רווח בפועל</dt>
-                <dd className="font-medium">{formatCurrency(row.actualProfit)}</dd>
+                <dt className="text-muted-foreground">רווח נקי</dt>
+                <dd className="font-medium">{formatCurrency(row.actualNetProfit)}</dd>
               </div>
             </dl>
           </li>
@@ -68,10 +68,10 @@ export function ReportsInstitutionTable({ rows }: ReportsInstitutionTableProps) 
               <th className="px-4 py-3 font-medium text-muted-foreground">כמות מפגשים</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">בוצעו</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">בוטלו</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">הכנסה בפועל</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">הכנסה פוטנציאלית</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">רווח בפועל</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">רווח פוטנציאלי</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">תקבול ברוטו</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">מע״מ</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">תקבול נטו</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">רווח נקי</th>
             </tr>
           </thead>
           <tbody>
@@ -82,16 +82,16 @@ export function ReportsInstitutionTable({ rows }: ReportsInstitutionTableProps) 
                 <td className="px-4 py-3 text-muted-foreground">{row.completedCount}</td>
                 <td className="px-4 py-3 text-muted-foreground">{row.cancelledCount}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.actualRevenue)}
+                  {formatCurrency(row.actualGrossRevenue)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.potentialRevenue)}
+                  {formatCurrency(row.actualVatAmount)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.actualProfit)}
+                  {formatCurrency(row.actualNetRevenueBeforeInstructor)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.potentialProfit)}
+                  {formatCurrency(row.actualNetProfit)}
                 </td>
               </tr>
             ))}

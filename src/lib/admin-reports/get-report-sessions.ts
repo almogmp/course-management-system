@@ -12,7 +12,10 @@ import { getEffectiveInstructorId } from "@/lib/sessions/instructor-assignment";
 import { resolveSessionInstructorDisplayName } from "@/lib/sessions/resolve-instructor-display-name";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
-import type { AdminReportSessionRow } from "@/lib/admin-reports/types";
+import type {
+  AdminReportSessionFinancials,
+  AdminReportSessionRow,
+} from "@/lib/admin-reports/types";
 
 type ReportSessionQueryRow = Pick<
   Database["public"]["Tables"]["sessions"]["Row"],
@@ -46,31 +49,46 @@ type ReportSessionQueryRow = Pick<
   } | null;
 };
 
+const ZERO_FINANCIALS: AdminReportSessionFinancials = {
+  grossRevenue: 0,
+  vatAmount: 0,
+  netRevenueBeforeInstructor: 0,
+  instructorPayout: 0,
+  grossProfit: 0,
+  netProfit: 0,
+};
+
 function displayFinancialAmounts(
   status: SessionStatus,
   financials: FinancialSessionRecord["financials"],
-): { revenue: number; instructorPayout: number; profit: number } {
+): AdminReportSessionFinancials {
   if (countsAsCancelledFinancial(status)) {
-    return { revenue: 0, instructorPayout: 0, profit: 0 };
+    return ZERO_FINANCIALS;
   }
 
   if (countsAsActualFinancial(status)) {
     return {
-      revenue: financials.actualRevenue,
+      grossRevenue: financials.actualGrossRevenue,
+      vatAmount: financials.actualVatAmount,
+      netRevenueBeforeInstructor: financials.actualNetRevenueBeforeInstructor,
       instructorPayout: financials.actualInstructorPayout,
-      profit: financials.actualProfit,
+      grossProfit: financials.actualGrossProfit,
+      netProfit: financials.actualNetProfit,
     };
   }
 
   if (countsAsPotentialFinancial(status)) {
     return {
-      revenue: financials.potentialRevenue,
+      grossRevenue: financials.potentialGrossRevenue,
+      vatAmount: financials.potentialVatAmount,
+      netRevenueBeforeInstructor: financials.potentialNetRevenueBeforeInstructor,
       instructorPayout: financials.potentialInstructorPayout,
-      profit: financials.potentialProfit,
+      grossProfit: financials.potentialGrossProfit,
+      netProfit: financials.potentialNetProfit,
     };
   }
 
-  return { revenue: 0, instructorPayout: 0, profit: 0 };
+  return ZERO_FINANCIALS;
 }
 
 function buildNotes(adminNote: string | null, cancellationReason: string | null): string {
@@ -162,8 +180,6 @@ export async function getAdminReportSessionRows(
       },
     });
 
-    const amounts = displayFinancialAmounts(row.status as SessionStatus, financialRecord.financials);
-
     rows.push({
       id: row.id,
       sessionDate: row.session_date,
@@ -182,9 +198,7 @@ export async function getAdminReportSessionRows(
       companyHours: row.company_hours,
       institutionHourlyRate: financialRecord.financials.effectiveInstitutionHourlyRate,
       instructorHourlyRate: financialRecord.financials.effectiveInstructorHourlyRate,
-      revenue: amounts.revenue,
-      instructorPayout: amounts.instructorPayout,
-      profit: amounts.profit,
+      financials: displayFinancialAmounts(row.status as SessionStatus, financialRecord.financials),
       notes: buildNotes(row.admin_note, row.cancellation_reason) || "—",
     });
   }

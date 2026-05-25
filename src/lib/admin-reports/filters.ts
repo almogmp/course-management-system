@@ -3,12 +3,17 @@ import {
   SESSION_STATUS_LABELS,
   type SessionStatus,
 } from "@/components/sessions/constants";
-import { getDefaultAdminReportDateRange } from "@/lib/admin-reports/default-date-range";
 import type {
   AdminReportFilters,
   AdminReportSessionRow,
   AdminReportStatusFilter,
 } from "@/lib/admin-reports/types";
+import {
+  type AdminReportSearchParamsInput,
+  parseAdminReportFilters,
+} from "@/lib/admin-reports/search-params";
+
+export { parseAdminReportFilters };
 
 export const ADMIN_REPORT_STATUS_OPTIONS: Array<{
   value: AdminReportStatusFilter;
@@ -22,33 +27,7 @@ export const ADMIN_REPORT_STATUS_OPTIONS: Array<{
   { value: "deferred", label: "נדחה" },
 ];
 
-export type AdminReportSearchParams = {
-  from?: string;
-  to?: string;
-  supplier?: string;
-  institution?: string;
-  instructor?: string;
-  status?: string;
-};
-
-export function parseAdminReportFilters(
-  searchParams?: AdminReportSearchParams,
-): AdminReportFilters {
-  const defaults = getDefaultAdminReportDateRange();
-  const status = (searchParams?.status?.trim() || "all") as AdminReportStatusFilter;
-  const validStatus = ADMIN_REPORT_STATUS_OPTIONS.some((option) => option.value === status)
-    ? status
-    : "all";
-
-  return {
-    fromDate: searchParams?.from?.trim() || defaults.fromDate,
-    toDate: searchParams?.to?.trim() || defaults.toDate,
-    supplierId: searchParams?.supplier?.trim() || undefined,
-    institutionId: searchParams?.institution?.trim() || undefined,
-    instructorId: searchParams?.instructor?.trim() || undefined,
-    status: validStatus,
-  };
-}
+export type AdminReportSearchParams = AdminReportSearchParamsInput;
 
 function matchesStatusFilter(status: SessionStatus, filter: AdminReportStatusFilter): boolean {
   if (filter === "all") {

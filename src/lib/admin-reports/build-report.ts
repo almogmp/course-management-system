@@ -20,9 +20,12 @@ function buildSummary(
 ): AdminReportSummary {
   const includeCancelledInFinancials = filters.status === "cancelled";
 
-  let totalRevenue = 0;
+  let totalGrossRevenue = 0;
+  let totalVat = 0;
+  let totalNetRevenue = 0;
   let totalInstructorPayout = 0;
-  let totalProfit = 0;
+  let totalGrossProfit = 0;
+  let totalNetProfit = 0;
   let instructorHours = 0;
   let companyHours = 0;
 
@@ -34,9 +37,12 @@ function buildSummary(
       continue;
     }
 
-    totalRevenue += row.revenue;
-    totalInstructorPayout += row.instructorPayout;
-    totalProfit += row.profit;
+    totalGrossRevenue += row.financials.grossRevenue;
+    totalVat += row.financials.vatAmount;
+    totalNetRevenue += row.financials.netRevenueBeforeInstructor;
+    totalInstructorPayout += row.financials.instructorPayout;
+    totalGrossProfit += row.financials.grossProfit;
+    totalNetProfit += row.financials.netProfit;
   }
 
   const cancelledCount = scopeRows.filter((row) => countsAsCancelledFinancial(row.status)).length;
@@ -46,9 +52,12 @@ function buildSummary(
     totalSessions: rows.length,
     instructorHours,
     companyHours,
-    totalRevenue,
+    totalGrossRevenue,
+    totalVat,
+    totalNetRevenue,
     totalInstructorPayout,
-    totalProfit,
+    totalGrossProfit,
+    totalNetProfit,
     cancelledCount,
     deferredCount,
   };
@@ -58,13 +67,44 @@ function resolveFilterLabel(
   id: string | undefined,
   options: Array<{ id: string; name?: string; full_name?: string }>,
   allLabel: string,
+  fallbackName?: string,
 ): string {
   if (!id) {
     return allLabel;
   }
 
   const match = options.find((option) => option.id === id);
-  return match?.name ?? match?.full_name ?? allLabel;
+  if (match?.name) {
+    return match.name;
+  }
+
+  if (match?.full_name) {
+    return match.full_name;
+  }
+
+  if (fallbackName) {
+    return fallbackName;
+  }
+
+  return allLabel;
+}
+
+function fallbackSupplierName(rows: AdminReportData["rows"], supplierId: string): string | undefined {
+  return rows.find((row) => row.supplierId === supplierId)?.supplierName;
+}
+
+function fallbackInstitutionName(
+  rows: AdminReportData["rows"],
+  institutionId: string,
+): string | undefined {
+  return rows.find((row) => row.institutionId === institutionId)?.institutionName;
+}
+
+function fallbackInstructorName(
+  rows: AdminReportData["rows"],
+  instructorId: string,
+): string | undefined {
+  return rows.find((row) => row.instructorId === instructorId)?.instructorName;
 }
 
 export async function buildAdminFinancialReport(
@@ -80,16 +120,23 @@ export async function buildAdminFinancialReport(
     rows,
     summary: buildSummary(rows, scopeRows, filters),
     filterLabels: {
-      supplierName: resolveFilterLabel(filters.supplierId, filterOptions.suppliers, "כל הספקים"),
+      supplierName: resolveFilterLabel(
+        filters.supplierId,
+        filterOptions.suppliers,
+        "כל הספקים",
+        filters.supplierId ? fallbackSupplierName(rows, filters.supplierId) : undefined,
+      ),
       institutionName: resolveFilterLabel(
         filters.institutionId,
         filterOptions.institutions,
         "כל המוסדות",
+        filters.institutionId ? fallbackInstitutionName(rows, filters.institutionId) : undefined,
       ),
       instructorName: resolveFilterLabel(
         filters.instructorId,
         filterOptions.instructors,
         "כל המדריכים",
+        filters.instructorId ? fallbackInstructorName(rows, filters.instructorId) : undefined,
       ),
       statusLabel: getAdminReportStatusLabel(filters.status),
       dateRangeLabel: formatReportDateRangeLabel(filters.fromDate, filters.toDate),
