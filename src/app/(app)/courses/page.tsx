@@ -1,28 +1,33 @@
 import { CreateCourseForm } from "@/components/courses/create-course-form";
 import { CoursesEmptyState } from "@/components/courses/courses-empty-state";
 import { CoursesList } from "@/components/courses/courses-list";
-import { getCourses } from "@/components/courses/get-courses";
+import { getCoursesForPage } from "@/components/courses/get-courses";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
+import { resolveAdminDeleteFlashMessage } from "@/lib/admin-delete/flash-message";
 import { getCourseFormOptions } from "@/lib/courses/get-course-form-options";
+import { isAdminEmail } from "@/config/admin";
 import { requireAuth } from "@/lib/auth/guards";
+import { getAuthSnapshot } from "@/lib/auth/session";
 
 type CoursesPageProps = {
   searchParams?: {
     create?: string;
     error?: string;
+    success?: string;
+    message?: string;
   };
 };
 
 export default async function CoursesPage({ searchParams }: CoursesPageProps) {
   await requireAuth();
+  const { user, isAdmin } = await getAuthSnapshot();
+  const showAdminLinks = Boolean(isAdmin && user?.email && isAdminEmail(user.email));
 
   const showCreateForm = searchParams?.create === "1";
-  const errorMessage =
-    typeof searchParams?.error === "string"
-      ? decodeURIComponent(searchParams.error)
-      : null;
-  const courses = await getCourses();
+  const { successMessage: deleteSuccessMessage, errorMessage } =
+    resolveAdminDeleteFlashMessage(searchParams);
+  const courses = await getCoursesForPage(isAdmin);
   const courseFormOptions = showCreateForm ? await getCourseFormOptions() : null;
 
   return (
@@ -32,16 +37,47 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
           <h1 className="text-2xl font-bold text-foreground sm:text-3xl">קורסים</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
             {courses.length > 0
+              ? showAdminLinks
               ? `${courses.length} קורסים במערכת`
-              : "רשימת הקורסים במערכת"}
+              : `${courses.length} הקורסים שלי`
+            : showAdminLinks
+              ? "רשימת הקורסים במערכת"
+              : "הקורסים שלי"}
           </p>
         </div>
-        {!showCreateForm ? (
-          <ButtonLink href="/courses?create=1" className="w-full shrink-0 sm:w-auto">
-            קורס חדש
-          </ButtonLink>
+        {showAdminLinks && !showCreateForm ? (
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <ButtonLink href="/courses?create=1" className="w-full shrink-0 sm:w-auto">
+              קורס חדש
+            </ButtonLink>
+            <ButtonLink
+              href="/admin/courses/with-sessions"
+              variant="secondary"
+              className="w-full shrink-0 sm:w-auto"
+            >
+              קורס + מפגשים
+            </ButtonLink>
+          </div>
         ) : null}
       </header>
+
+      {deleteSuccessMessage ? (
+        <p
+          className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+          role="status"
+        >
+          {deleteSuccessMessage}
+        </p>
+      ) : null}
+
+      {errorMessage ? (
+        <p
+          className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          {errorMessage}
+        </p>
+      ) : null}
 
       {showCreateForm && courseFormOptions ? (
         <CreateCourseForm options={courseFormOptions} errorMessage={errorMessage} />
@@ -50,7 +86,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
       {courses.length === 0 ? (
         <CoursesEmptyState />
       ) : (
-        <CoursesList courses={courses} />
+        <CoursesList courses={courses} showAdminLinks={showAdminLinks} />
       )}
     </Container>
   );

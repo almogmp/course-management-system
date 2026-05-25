@@ -21,6 +21,14 @@ export function computeReportSummary(sessions: ReportSessionRecord[]): ReportSum
     cancelledCount: overview.cancelledCount,
     instructorHours: overview.instructorHours,
     companyHours: overview.companyHours,
+    financial: {
+      actualRevenue: 0,
+      potentialRevenue: 0,
+      actualInstructorPayout: 0,
+      potentialInstructorPayout: 0,
+      actualProfit: 0,
+      potentialProfit: 0,
+    },
   };
 }
 
@@ -41,6 +49,10 @@ export function aggregateInstitutionReport(
       cancelledCount: 0,
       instructorHours: 0,
       companyHours: 0,
+      actualRevenue: 0,
+      potentialRevenue: 0,
+      actualProfit: 0,
+      potentialProfit: 0,
     };
 
     existing.sessionCount += 1;
@@ -79,6 +91,10 @@ export function aggregateCourseReport(sessions: ReportSessionRecord[]): CourseRe
       instructorHours: 0,
       companyHours: 0,
       courseStatus: session.course_status,
+      actualRevenue: 0,
+      potentialRevenue: 0,
+      actualInstructorPayout: 0,
+      actualProfit: 0,
     };
 
     existing.sessionCount += 1;
@@ -104,9 +120,15 @@ export function buildMonthlyReportData(sessions: ReportSessionRecord[]): Monthly
 
   const instructorRows: InstructorWorkloadRow[] = aggregateInstructorWorkload(workloadEntries);
 
+  const instructorReportRows = instructorRows.map((row) => ({
+    ...row,
+    actualInstructorPayout: 0,
+    potentialInstructorPayout: 0,
+  }));
+
   return {
     summary: computeReportSummary(sessions),
-    instructorRows,
+    instructorRows: instructorReportRows,
     institutionRows: aggregateInstitutionReport(sessions),
     courseRows: aggregateCourseReport(sessions),
   };

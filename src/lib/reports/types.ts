@@ -2,6 +2,8 @@ import type { CourseStatus } from "@/components/courses/constants";
 import type { SessionStatus } from "@/components/sessions/constants";
 import type { InstructorWorkloadRow } from "@/lib/dashboard/workload";
 
+export type { InstructorWorkloadRow };
+
 export type ReportSessionRecord = {
   id: string;
   status: SessionStatus;
@@ -16,12 +18,22 @@ export type ReportSessionRecord = {
   course_status: CourseStatus;
 };
 
+export type ReportFinancialSummary = {
+  actualRevenue: number;
+  potentialRevenue: number;
+  actualInstructorPayout: number;
+  potentialInstructorPayout: number;
+  actualProfit: number;
+  potentialProfit: number;
+};
+
 export type ReportSummary = {
   totalSessions: number;
   completedCount: number;
   cancelledCount: number;
   instructorHours: number;
   companyHours: number;
+  financial: ReportFinancialSummary;
 };
 
 export type InstitutionReportRow = {
@@ -32,6 +44,10 @@ export type InstitutionReportRow = {
   cancelledCount: number;
   instructorHours: number;
   companyHours: number;
+  actualRevenue: number;
+  potentialRevenue: number;
+  actualProfit: number;
+  potentialProfit: number;
 };
 
 export type CourseReportRow = {
@@ -43,11 +59,20 @@ export type CourseReportRow = {
   instructorHours: number;
   companyHours: number;
   courseStatus: CourseStatus;
+  actualRevenue: number;
+  potentialRevenue: number;
+  actualInstructorPayout: number;
+  actualProfit: number;
+};
+
+export type InstructorReportRow = InstructorWorkloadRow & {
+  actualInstructorPayout: number;
+  potentialInstructorPayout: number;
 };
 
 export type MonthlyReportData = {
   summary: ReportSummary;
-  instructorRows: InstructorWorkloadRow[];
+  instructorRows: InstructorReportRow[];
   institutionRows: InstitutionReportRow[];
   courseRows: CourseReportRow[];
 };

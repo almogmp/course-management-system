@@ -15,6 +15,8 @@ type CourseSessionsManagementProps = {
   instructors: InstructorSelectOption[];
   showAdminActions: boolean;
   currentInstructorId: string | null;
+  courseInstitutionRate: number;
+  courseInstructorRate: number;
 };
 
 export function CourseSessionsManagement({
@@ -23,6 +25,8 @@ export function CourseSessionsManagement({
   instructors,
   showAdminActions,
   currentInstructorId,
+  courseInstitutionRate,
+  courseInstructorRate,
 }: CourseSessionsManagementProps) {
   const [statusFilter, setStatusFilter] = useState<SessionStatusFilter>("all");
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
@@ -70,6 +74,8 @@ export function CourseSessionsManagement({
           instructors={instructors}
           showAdminActions={showAdminActions}
           currentInstructorId={currentInstructorId}
+          courseInstitutionRate={courseInstitutionRate}
+          courseInstructorRate={courseInstructorRate}
           editingSessionId={editingSessionId}
           onEdit={setEditingSessionId}
           onCancelEdit={() => setEditingSessionId(null)}

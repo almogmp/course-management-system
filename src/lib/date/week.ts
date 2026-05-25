@@ -15,6 +15,8 @@ export type WeekDay = {
   label: string;
   dayNumber: number;
   isToday: boolean;
+  hebrewDateLabel?: string;
+  holidays?: string[];
 };
 
 export type WeekRange = {

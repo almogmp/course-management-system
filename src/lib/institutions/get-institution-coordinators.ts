@@ -21,7 +21,11 @@ export async function getInstitutionCoordinators(
     .order("full_name", { ascending: true });
 
   if (error) {
-    throw new Error(error.message);
+    console.error(
+      `[getInstitutionCoordinators] Failed for institution ${institutionId}:`,
+      error.message,
+    );
+    return [];
   }
 
   return (data ?? []) as InstitutionCoordinatorRow[];
@@ -44,7 +48,8 @@ export async function getAllCoordinatorsForSelect(): Promise<
     .order("full_name", { ascending: true });
 
   if (error) {
-    throw new Error(error.message);
+    console.error("[getAllCoordinatorsForSelect] Failed to load coordinators:", error.message);
+    return [];
   }
 
   return ((data ?? []) as Array<{

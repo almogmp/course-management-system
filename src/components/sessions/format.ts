@@ -23,6 +23,15 @@ export function formatSessionHours(hours: number): string {
   }).format(hours);
 }
 
+/** שעות לטבלאות — תמיד ערך מוצג, ללא תא ריק */
+export function formatSessionHoursDisplay(hours: number | null | undefined): string {
+  if (hours === null || hours === undefined || Number.isNaN(hours)) {
+    return "—";
+  }
+
+  return formatSessionHours(hours);
+}
+
 /** TIME מ-Postgres → ערך ל-input type="time" */
 export function formatTimeForInput(time: string): string {
   return time.slice(0, 5);

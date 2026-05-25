@@ -17,6 +17,7 @@ import {
 } from "@/lib/calendar/calendar-filters";
 import type { DashboardSearchParams } from "@/lib/dashboard/dashboard-url";
 import { formatWeekRangeLabel, parseWeekStartParam } from "@/lib/date/week";
+import { enrichDateKeysWithHebrew, enrichWeekDays } from "@/lib/calendar/hebrew-calendar";
 import { getSafeErrorMessage, logServerError } from "@/lib/errors/safe-error-message";
 
 type DashboardCalendarSectionProps = {
@@ -51,6 +52,11 @@ async function DashboardCalendarSectionContent({
   if (view === "monthly") {
     const { calendarDays, sessions: rawSessions } = await getMonthlySessions(isAdmin, monthView);
     const sessions = applyCalendarFilters(rawSessions, filters);
+    const hebrewByDate = enrichDateKeysWithHebrew(calendarDays.map((day) => day.dateKey));
+    const enrichedCalendarDays = calendarDays.map((day) => ({
+      ...day,
+      ...hebrewByDate[day.dateKey],
+    }));
     const monthLabel = formatMonthLabel(monthView);
 
     return (
@@ -95,13 +101,14 @@ async function DashboardCalendarSectionContent({
           </div>
         ) : null}
 
-        <MonthlyCalendar calendarDays={calendarDays} sessions={sessions} />
+        <MonthlyCalendar calendarDays={enrichedCalendarDays} sessions={sessions} />
       </section>
     );
   }
 
   const { weekRange, sessions: rawSessions } = await getWeeklySessions(isAdmin, weekStart);
   const sessions = applyCalendarFilters(rawSessions, filters);
+  const enrichedWeekDays = enrichWeekDays(weekRange.days);
 
   return (
     <section aria-labelledby="dashboard-calendar-heading" className="space-y-4">
@@ -146,7 +153,7 @@ async function DashboardCalendarSectionContent({
         </div>
       ) : null}
 
-      <WeeklyCalendar weekDays={weekRange.days} sessions={sessions} />
+      <WeeklyCalendar weekDays={enrichedWeekDays} sessions={sessions} />
     </section>
   );
 }

@@ -1,5 +1,6 @@
 import { COURSE_STATUS_LABELS } from "@/components/courses/constants";
 import { formatSessionHours } from "@/components/sessions/format";
+import { formatCurrency } from "@/lib/financial/format-currency";
 import type { CourseReportRow } from "@/lib/reports/types";
 
 type ReportsCourseTableProps = {
@@ -27,7 +28,7 @@ export function ReportsCourseTable({ rows }: ReportsCourseTableProps) {
         {rows.map((row) => (
           <li
             key={row.courseId}
-            className="rounded-xl border border-border bg-surface p-4 text-start"
+            className="rounded-xl border border-border bg-surface p-4 text-center"
           >
             <p className="font-semibold text-foreground">{row.courseName}</p>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -47,8 +48,12 @@ export function ReportsCourseTable({ rows }: ReportsCourseTableProps) {
                 <dd className="font-medium">{formatSessionHours(row.instructorHours)}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">שעות חברה</dt>
-                <dd className="font-medium">{formatSessionHours(row.companyHours)}</dd>
+                <dt className="text-muted-foreground">הכנסה בפועל</dt>
+                <dd className="font-medium">{formatCurrency(row.actualRevenue)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">רווח בפועל</dt>
+                <dd className="font-medium">{formatCurrency(row.actualProfit)}</dd>
               </div>
             </dl>
           </li>
@@ -56,15 +61,17 @@ export function ReportsCourseTable({ rows }: ReportsCourseTableProps) {
       </ul>
 
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block">
-        <table className="w-full min-w-[960px] text-start text-sm">
+        <table className="app-table w-full min-w-[960px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 font-medium text-muted-foreground">קורס</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">מוסד</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">מדריך</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">כמות מפגשים</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">שעות מדריך</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">שעות חברה</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">הכנסה בפועל</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">הכנסה פוטנציאלית</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">שכר מדריכים בפועל</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">רווח בפועל</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">סטטוס עיקרי</th>
             </tr>
           </thead>
@@ -78,10 +85,16 @@ export function ReportsCourseTable({ rows }: ReportsCourseTableProps) {
                 <td className="px-4 py-3 text-muted-foreground">{row.instructorName}</td>
                 <td className="px-4 py-3 text-muted-foreground">{row.sessionCount}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatSessionHours(row.instructorHours)}
+                  {formatCurrency(row.actualRevenue)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatSessionHours(row.companyHours)}
+                  {formatCurrency(row.potentialRevenue)}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {formatCurrency(row.actualInstructorPayout)}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {formatCurrency(row.actualProfit)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {COURSE_STATUS_LABELS[row.courseStatus]}

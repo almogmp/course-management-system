@@ -1,58 +1,68 @@
-import Link from "next/link";
-
+import { CourseRowActions } from "@/components/courses/course-row-actions";
 import { CourseStatusBadge } from "@/components/courses/course-status-badge";
 import type { CourseListItem } from "@/components/courses/get-courses";
+import { MobileCard, MobileCardActions, MobileCardBody, MobileCardField } from "@/components/ui/mobile-card";
+import {
+  APP_TABLE_CLASS,
+  APP_TABLE_TD_CLASS,
+  APP_TABLE_TH_CLASS,
+} from "@/components/ui/table-classes";
+import { MOBILE_CARD_LIST_CLASS, MOBILE_CARD_TEXT_BLOCK_CLASS } from "@/components/ui/mobile-card-classes";
 
 type CoursesListProps = {
   courses: CourseListItem[];
+  showAdminLinks?: boolean;
 };
 
-export function CoursesList({ courses }: CoursesListProps) {
+export function CoursesList({ courses, showAdminLinks = false }: CoursesListProps) {
   return (
     <>
-      {/* Mobile: cards */}
-      <ul className="space-y-3 md:hidden">
+      <ul className={MOBILE_CARD_LIST_CLASS}>
         {courses.map((course) => (
-          <li
-            key={course.id}
-            className="rounded-xl border border-border bg-surface p-4 text-start"
-          >
-            <div className="flex flex-col gap-3">
-              <div className="space-y-1">
-                <h2 className="text-base font-semibold text-foreground">{course.name}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {course.institution_name ?? "ללא מוסד"}
-                </p>
+          <MobileCard key={course.id}>
+            <MobileCardBody>
+              <div className={MOBILE_CARD_TEXT_BLOCK_CLASS}>
+                <MobileCardField value={course.name} emphasize />
+                <MobileCardField
+                  label=""
+                  value={course.institution_name ?? "ללא מוסד"}
+                />
+                <MobileCardField
+                  label="מדריך: "
+                  value={course.lead_instructor_name ?? "לא שובץ"}
+                />
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <MobileCardActions>
                 <CourseStatusBadge status={course.status} />
-              </div>
-              <Link
-                href={`/courses/${course.id}/sessions`}
-                className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:w-auto sm:text-base"
-              >
-                ניהול מפגשים
-              </Link>
-            </div>
-          </li>
+                <CourseRowActions
+                  courseId={course.id}
+                  courseName={course.name}
+                  showAdminLinks={showAdminLinks}
+                  variant="card"
+                />
+              </MobileCardActions>
+            </MobileCardBody>
+          </MobileCard>
         ))}
       </ul>
 
-      {/* Desktop: table */}
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block">
-        <table className="w-full min-w-[640px] text-start text-sm">
+        <table className={`${APP_TABLE_CLASS} min-w-[840px]`}>
           <thead>
             <tr className="border-b border-border bg-muted/50">
-              <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
+              <th scope="col" className={APP_TABLE_TH_CLASS}>
                 שם קורס
               </th>
-              <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
+              <th scope="col" className={APP_TABLE_TH_CLASS}>
                 מוסד
               </th>
-              <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
+              <th scope="col" className={APP_TABLE_TH_CLASS}>
+                מדריך
+              </th>
+              <th scope="col" className={APP_TABLE_TH_CLASS}>
                 סטטוס
               </th>
-              <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
+              <th scope="col" className={APP_TABLE_TH_CLASS}>
                 פעולות
               </th>
             </tr>
@@ -60,20 +70,25 @@ export function CoursesList({ courses }: CoursesListProps) {
           <tbody>
             {courses.map((course) => (
               <tr key={course.id} className="border-b border-border last:border-b-0">
-                <td className="px-4 py-3 font-medium text-foreground">{course.name}</td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {course.institution_name ?? "—"}
+                <td className={`${APP_TABLE_TD_CLASS} font-medium text-foreground`}>
+                  {course.name}
                 </td>
-                <td className="px-4 py-3">
-                  <CourseStatusBadge status={course.status} />
+                <td className={APP_TABLE_TD_CLASS}>{course.institution_name ?? "—"}</td>
+                <td className={APP_TABLE_TD_CLASS}>
+                  {course.lead_instructor_name ?? "לא שובץ"}
                 </td>
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/courses/${course.id}/sessions`}
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    ניהול מפגשים
-                  </Link>
+                <td className={APP_TABLE_TD_CLASS}>
+                  <div className="flex justify-center">
+                    <CourseStatusBadge status={course.status} />
+                  </div>
+                </td>
+                <td className={APP_TABLE_TD_CLASS}>
+                  <CourseRowActions
+                    courseId={course.id}
+                    courseName={course.name}
+                    showAdminLinks={showAdminLinks}
+                    variant="table"
+                  />
                 </td>
               </tr>
             ))}

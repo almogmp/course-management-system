@@ -15,6 +15,7 @@ export type AttendanceActionState = {
 
 function revalidateSessionPaths(courseId: string) {
   revalidatePath(`/courses/${courseId}/sessions`);
+  revalidatePath("/sessions");
   revalidatePath("/dashboard");
 }
 

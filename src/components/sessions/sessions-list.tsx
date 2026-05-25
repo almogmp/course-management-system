@@ -1,75 +1,95 @@
-import { SessionStatusBadge } from "@/components/sessions/session-status-badge";
+import Link from "next/link";
+
 import {
   formatSessionDate,
   formatSessionTimeRange,
 } from "@/components/sessions/format";
 import type { SessionListItem } from "@/components/sessions/get-sessions";
+import { SessionGlobalListActions } from "@/components/sessions/session-global-list-actions";
+import { SessionListFields } from "@/components/sessions/session-list-fields";
+import { MobileCard, MobileCardBody } from "@/components/ui/mobile-card";
+import {
+  APP_TABLE_CLASS,
+  APP_TABLE_TD_CLASS,
+  APP_TABLE_TH_CLASS,
+} from "@/components/ui/table-classes";
+import { MOBILE_CARD_LIST_CLASS } from "@/components/ui/mobile-card-classes";
 
 type SessionsListProps = {
   sessions: SessionListItem[];
+  showAdminActions?: boolean;
+  showInstitutionColumn?: boolean;
+  listReturnPath: string;
 };
 
-export function SessionsList({ sessions }: SessionsListProps) {
+export function SessionsList({
+  sessions,
+  showAdminActions = false,
+  showInstitutionColumn = false,
+  listReturnPath,
+}: SessionsListProps) {
   return (
     <>
-      {/* Mobile: cards */}
-      <ul className="space-y-3 md:hidden">
+      <ul className={MOBILE_CARD_LIST_CLASS}>
         {sessions.map((session) => (
-          <li
-            key={session.id}
-            className="rounded-xl border border-border bg-surface p-4 text-start"
-          >
-            <div className="flex flex-col gap-3">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">
-                  {formatSessionDate(session.session_date)}
-                </p>
-                <p className="text-sm text-muted-foreground" dir="ltr">
-                  {formatSessionTimeRange(session.start_time, session.end_time)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {session.course_name ?? "ללא קורס"}
-                </p>
-              </div>
-              <SessionStatusBadge status={session.status} />
-            </div>
-          </li>
+          <MobileCard key={session.id}>
+            <MobileCardBody>
+              <SessionListFields
+                session={session}
+                showInstitution={showInstitutionColumn}
+                linkCourse
+              />
+              <SessionGlobalListActions
+                session={session}
+                showAdminActions={showAdminActions}
+                listReturnPath={listReturnPath}
+                variant="card"
+              />
+            </MobileCardBody>
+          </MobileCard>
         ))}
       </ul>
 
-      {/* Desktop: table */}
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block">
-        <table className="w-full min-w-[640px] text-start text-sm">
+        <table className={`${APP_TABLE_CLASS} min-w-[1040px]`}>
           <thead>
             <tr className="border-b border-border bg-muted/50">
-              <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
-                תאריך
-              </th>
-              <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
-                שעות
-              </th>
-              <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
-                קורס
-              </th>
-              <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
-                סטטוס
-              </th>
+              <th className={APP_TABLE_TH_CLASS}>תאריך</th>
+              <th className={APP_TABLE_TH_CLASS}>שעות</th>
+              <th className={APP_TABLE_TH_CLASS}>קורס</th>
+              <th className={APP_TABLE_TH_CLASS}>מדריך</th>
+              {showInstitutionColumn ? <th className={APP_TABLE_TH_CLASS}>מוסד</th> : null}
+              <th className={APP_TABLE_TH_CLASS}>פעולות</th>
             </tr>
           </thead>
           <tbody>
             {sessions.map((session) => (
               <tr key={session.id} className="border-b border-border last:border-b-0">
-                <td className="px-4 py-3 font-medium text-foreground">
+                <td className={`${APP_TABLE_TD_CLASS} font-medium text-foreground`}>
                   {formatSessionDate(session.session_date)}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground" dir="ltr">
+                <td className={APP_TABLE_TD_CLASS} dir="ltr">
                   {formatSessionTimeRange(session.start_time, session.end_time)}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {session.course_name ?? "—"}
+                <td className={`${APP_TABLE_TD_CLASS} text-foreground`}>
+                  <Link
+                    href={`/courses/${session.course_id}/sessions`}
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {session.course_name}
+                  </Link>
                 </td>
-                <td className="px-4 py-3">
-                  <SessionStatusBadge status={session.status} />
+                <td className={APP_TABLE_TD_CLASS}>{session.instructor_name}</td>
+                {showInstitutionColumn ? (
+                  <td className={APP_TABLE_TD_CLASS}>{session.institution_name}</td>
+                ) : null}
+                <td className={APP_TABLE_TD_CLASS}>
+                  <SessionGlobalListActions
+                    session={session}
+                    showAdminActions={showAdminActions}
+                    listReturnPath={listReturnPath}
+                    variant="table"
+                  />
                 </td>
               </tr>
             ))}

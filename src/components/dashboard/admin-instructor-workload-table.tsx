@@ -25,7 +25,7 @@ export function AdminInstructorWorkloadTable({ rows }: AdminInstructorWorkloadTa
         {rows.map((row) => (
           <li
             key={row.instructorId}
-            className="rounded-xl border border-border bg-surface p-4 text-start"
+            className="rounded-xl border border-border bg-surface p-4 text-center"
           >
             <p className="text-base font-semibold text-foreground">{row.instructorName}</p>
             <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
@@ -63,7 +63,7 @@ export function AdminInstructorWorkloadTable({ rows }: AdminInstructorWorkloadTa
       </ul>
 
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block">
-        <table className="w-full min-w-[880px] text-start text-sm">
+        <table className="app-table w-full min-w-[880px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">

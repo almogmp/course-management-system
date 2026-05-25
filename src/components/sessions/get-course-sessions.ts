@@ -1,4 +1,5 @@
 import { getEffectiveInstructorId } from "@/lib/sessions/instructor-assignment";
+import { resolveSessionInstructorDisplayName } from "@/lib/sessions/resolve-instructor-display-name";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -12,6 +13,8 @@ export type CourseSessionsContext = {
   institution_name: string | null;
   lead_instructor_id: string;
   target_instructor_hours: number | null;
+  institution_hourly_rate: number;
+  instructor_hourly_rate: number;
 };
 
 export type CourseSessionListItem = {
@@ -25,16 +28,27 @@ export type CourseSessionListItem = {
   admin_note: string | null;
   cancellation_reason: string | null;
   assigned_instructor_id: string;
+  instructor_name: string;
+  institution_hourly_rate: number | null;
+  instructor_hourly_rate: number | null;
   actual_arrival_time: string | null;
   actual_start_time: string | null;
   actual_end_time: string | null;
+  hebrew_date_label?: string;
 };
 
 type CourseQueryRow = Pick<
   Database["public"]["Tables"]["courses"]["Row"],
-  "id" | "name" | "status" | "lead_instructor_id" | "target_instructor_hours"
+  | "id"
+  | "name"
+  | "status"
+  | "lead_instructor_id"
+  | "target_instructor_hours"
+  | "company_hourly_rate"
+  | "instructor_hourly_wage"
 > & {
   institutions: Pick<Database["public"]["Tables"]["institutions"]["Row"], "name"> | null;
+  lead_instructor: Pick<Database["public"]["Tables"]["instructors"]["Row"], "full_name"> | null;
 };
 
 type AdminSessionRow = Pick<
@@ -52,7 +66,14 @@ type AdminSessionRow = Pick<
   | "actual_arrival_time"
   | "actual_start_time"
   | "actual_end_time"
->;
+  | "institution_hourly_rate"
+  | "instructor_hourly_rate"
+> & {
+  substitute_instructor: Pick<
+    Database["public"]["Tables"]["instructors"]["Row"],
+    "full_name"
+  > | null;
+};
 
 type InstructorSessionRow = {
   id: string;
@@ -106,6 +127,8 @@ export async function getCourseSessionsPageData(
           institution_name: null,
           lead_instructor_id: "",
           target_instructor_hours: null,
+          institution_hourly_rate: 0,
+          instructor_hourly_rate: 0,
         },
         sessions: [],
       };
@@ -118,6 +141,8 @@ export async function getCourseSessionsPageData(
       institution_name: null,
       lead_instructor_id: "",
       target_instructor_hours: null,
+      institution_hourly_rate: 0,
+      instructor_hourly_rate: 0,
     };
 
     const sessions: CourseSessionListItem[] = (
@@ -135,6 +160,9 @@ export async function getCourseSessionsPageData(
       admin_note: null,
       cancellation_reason: row.cancellation_reason,
       assigned_instructor_id: row.substitute_instructor_id ?? "",
+      instructor_name: "—",
+      institution_hourly_rate: null,
+      instructor_hourly_rate: null,
       actual_arrival_time: row.actual_arrival_time,
       actual_start_time: row.actual_start_time,
       actual_end_time: row.actual_end_time,
@@ -145,7 +173,11 @@ export async function getCourseSessionsPageData(
 
   const { data: courseRow, error: courseError } = await supabase
     .from("courses")
-    .select("id, name, status, lead_instructor_id, target_instructor_hours, institutions(name)")
+    .select(
+      `id, name, status, lead_instructor_id, target_instructor_hours, company_hourly_rate, instructor_hourly_wage,
+       institutions(name),
+       lead_instructor:instructors!courses_lead_instructor_id_fkey(full_name)`,
+    )
     .eq("id", courseId)
     .maybeSingle();
 
@@ -159,18 +191,33 @@ export async function getCourseSessionsPageData(
 
   const courseData = courseRow as CourseQueryRow;
 
-  const { data: sessionRows, error: sessionsError } = await supabase
-    .from("sessions")
-    .select(
-      "id, session_date, start_time, end_time, instructor_hours, company_hours, status, admin_note, substitute_instructor_id, cancellation_reason, actual_arrival_time, actual_start_time, actual_end_time",
-    )
-    .eq("course_id", courseId)
-    .order("session_date", { ascending: true })
-    .order("start_time", { ascending: true });
+  const [{ data: sessionRows, error: sessionsError }, { data: instructorRows, error: instructorsError }] =
+    await Promise.all([
+      supabase
+        .from("sessions")
+        .select(
+          `id, session_date, start_time, end_time, instructor_hours, company_hours, status, admin_note,
+           substitute_instructor_id, cancellation_reason, actual_arrival_time, actual_start_time, actual_end_time,
+           institution_hourly_rate, instructor_hourly_rate,
+           substitute_instructor:instructors!sessions_substitute_instructor_id_fkey(full_name)`,
+        )
+        .eq("course_id", courseId)
+        .order("session_date", { ascending: true })
+        .order("start_time", { ascending: true }),
+      supabase.from("instructors").select("id, full_name"),
+    ]);
 
   if (sessionsError) {
     throw new Error(sessionsError.message);
   }
+
+  if (instructorsError) {
+    throw new Error(instructorsError.message);
+  }
+
+  const instructorNames = new Map(
+    (instructorRows ?? []).map((row) => [row.id, row.full_name]),
+  );
 
   const course: CourseSessionsContext = {
     id: courseData.id,
@@ -179,6 +226,8 @@ export async function getCourseSessionsPageData(
     institution_name: courseData.institutions?.name ?? null,
     lead_instructor_id: courseData.lead_instructor_id,
     target_instructor_hours: courseData.target_instructor_hours ?? null,
+    institution_hourly_rate: courseData.company_hourly_rate,
+    instructor_hourly_rate: courseData.instructor_hourly_wage,
   };
 
   const sessions: CourseSessionListItem[] = ((sessionRows ?? []) as AdminSessionRow[]).map(
@@ -196,6 +245,15 @@ export async function getCourseSessionsPageData(
         row.substitute_instructor_id,
         course.lead_instructor_id,
       ),
+      instructor_name: resolveSessionInstructorDisplayName({
+        substituteInstructorId: row.substitute_instructor_id,
+        substituteName: row.substitute_instructor?.full_name,
+        leadInstructorId: course.lead_instructor_id,
+        leadName: courseData.lead_instructor?.full_name,
+        nameById: instructorNames,
+      }),
+      institution_hourly_rate: row.institution_hourly_rate,
+      instructor_hourly_rate: row.instructor_hourly_rate,
       actual_arrival_time: row.actual_arrival_time,
       actual_start_time: row.actual_start_time,
       actual_end_time: row.actual_end_time,

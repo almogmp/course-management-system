@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 
 import { mapFormStatusToDb, type SessionStatus } from "@/components/sessions/constants";
 import { requireAdmin, requireAuth } from "@/lib/auth/guards";
+import { parseOptionalRate } from "@/lib/financial/parse-rates";
 import { instructorExists } from "@/lib/instructors/get-instructors-for-select";
+import { buildSessionInsert } from "@/lib/sessions/build-session-insert";
 import { resolveSessionSubstituteInstructorId } from "@/lib/sessions/instructor-assignment";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
@@ -37,6 +39,8 @@ type ParsedSessionForm = {
   companyHours: number;
   status: SessionStatus;
   notes: string;
+  institutionHourlyRate: number | null;
+  instructorHourlyRate: number | null;
 };
 
 function courseSessionsPath(courseId: string, query?: { error?: string; success?: string }) {
@@ -112,6 +116,22 @@ function parseAndValidateSessionForm(
     return { ok: false, error: "למפגש ממתין לאישור יש לציין הערה או סיבה." };
   }
 
+  const institutionRate = parseOptionalRate(
+    String(formData.get("institution_hourly_rate") ?? ""),
+    "מחיר לשעה מהמוסד",
+  );
+  if (!institutionRate.ok) {
+    return { ok: false, error: institutionRate.error };
+  }
+
+  const instructorRate = parseOptionalRate(
+    String(formData.get("instructor_hourly_rate") ?? ""),
+    "שכר מדריך לשעה",
+  );
+  if (!instructorRate.ok) {
+    return { ok: false, error: instructorRate.error };
+  }
+
   return {
     ok: true,
     data: {
@@ -122,6 +142,8 @@ function parseAndValidateSessionForm(
       companyHours,
       status,
       notes,
+      institutionHourlyRate: institutionRate.value,
+      instructorHourlyRate: instructorRate.value,
     },
   };
 }
@@ -152,8 +174,17 @@ export async function createSessionAction(
     return { error: parsed.error };
   }
 
-  const { sessionDate, startTime, endTime, instructorHours, companyHours, status, notes } =
-    parsed.data;
+  const {
+    sessionDate,
+    startTime,
+    endTime,
+    instructorHours,
+    companyHours,
+    status,
+    notes,
+    institutionHourlyRate,
+    instructorHourlyRate,
+  } = parsed.data;
 
   const assignedInstructorId = parseAssignedInstructorId(formData);
 
@@ -187,23 +218,21 @@ export async function createSessionAction(
     return { error: "לקורס חסר מדריך מוביל." };
   }
 
-  const payload: SessionInsert = {
-    course_id: courseId,
-    session_date: sessionDate,
-    start_time: startTime,
-    end_time: endTime,
-    instructor_hours: instructorHours,
-    company_hours: companyHours,
+  const payload: SessionInsert = buildSessionInsert({
+    courseId,
+    schoolYear: course.school_year,
+    leadInstructorId: course.lead_instructor_id,
+    sessionDate,
+    startTime,
+    endTime,
+    instructorHours,
+    companyHours,
     status,
-    school_year: course.school_year,
-    admin_note: notes || null,
-    cancellation_reason:
-      status === "cancelled" || status === "deferred" ? notes : null,
-    substitute_instructor_id: resolveSessionSubstituteInstructorId(
-      assignedInstructorId,
-      course.lead_instructor_id,
-    ),
-  };
+    assignedInstructorId,
+    institutionHourlyRate,
+    instructorHourlyRate,
+    notes,
+  });
 
   const { error: insertError } = await supabase.from("sessions").insert(payload);
 
@@ -236,8 +265,17 @@ export async function updateSessionAction(
     return { error: parsed.error };
   }
 
-  const { sessionDate, startTime, endTime, instructorHours, companyHours, status, notes } =
-    parsed.data;
+  const {
+    sessionDate,
+    startTime,
+    endTime,
+    instructorHours,
+    companyHours,
+    status,
+    notes,
+    institutionHourlyRate,
+    instructorHourlyRate,
+  } = parsed.data;
 
   const assignedInstructorId = parseAssignedInstructorId(formData);
 
@@ -308,6 +346,8 @@ export async function updateSessionAction(
       assignedInstructorId,
       course.lead_instructor_id,
     ),
+    institution_hourly_rate: institutionHourlyRate,
+    instructor_hourly_rate: instructorHourlyRate,
   };
 
   const { data: updated, error: updateError } = await supabase

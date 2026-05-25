@@ -5,6 +5,8 @@ export type MonthCalendarDay = {
   dayNumber: number;
   isCurrentMonth: boolean;
   isToday: boolean;
+  hebrewDateLabel?: string;
+  holidays?: string[];
 };
 
 export type MonthView = {

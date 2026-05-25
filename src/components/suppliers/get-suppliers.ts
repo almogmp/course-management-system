@@ -12,6 +12,7 @@ export async function getSuppliers(): Promise<SupplierListItem[]> {
   const { data, error } = await supabase
     .from("primary_suppliers")
     .select("id, name, contact_name, phone, email")
+    .eq("is_active", true)
     .order("name", { ascending: true });
 
   if (error) {

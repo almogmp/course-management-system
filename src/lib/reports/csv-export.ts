@@ -1,5 +1,6 @@
 import { COURSE_STATUS_LABELS } from "@/components/courses/constants";
 import { formatSessionHours } from "@/components/sessions/format";
+import { formatCurrency } from "@/lib/financial/format-currency";
 import type { MonthlyReportData } from "@/lib/reports/types";
 
 function escapeCsvCell(value: string | number): string {
@@ -44,6 +45,28 @@ export function buildMonthlyReportCsv(
     ]),
   );
   lines.push("");
+  lines.push("סיכום פיננסי");
+  lines.push(
+    rowToCsv([
+      "הכנסה בפועל",
+      "הכנסה פוטנציאלית",
+      "שכר מדריכים בפועל",
+      "שכר מדריכים פוטנציאלי",
+      "רווח בפועל",
+      "רווח פוטנציאלי",
+    ]),
+  );
+  lines.push(
+    rowToCsv([
+      formatCurrency(report.summary.financial.actualRevenue),
+      formatCurrency(report.summary.financial.potentialRevenue),
+      formatCurrency(report.summary.financial.actualInstructorPayout),
+      formatCurrency(report.summary.financial.potentialInstructorPayout),
+      formatCurrency(report.summary.financial.actualProfit),
+      formatCurrency(report.summary.financial.potentialProfit),
+    ]),
+  );
+  lines.push("");
   lines.push("מדריכים");
   lines.push(
     rowToCsv([
@@ -53,7 +76,8 @@ export function buildMonthlyReportCsv(
       "בוטלו",
       "ממתינים לאישור",
       "שעות מדריך",
-      "שעות חברה",
+      "שכר בפועל",
+      "שכר פוטנציאלי",
     ]),
   );
 
@@ -66,7 +90,8 @@ export function buildMonthlyReportCsv(
         row.cancelledCount,
         row.pendingApprovalCount,
         formatSessionHours(row.instructorHours),
-        formatSessionHours(row.companyHours),
+        formatCurrency(row.actualInstructorPayout),
+        formatCurrency(row.potentialInstructorPayout),
       ]),
     );
   }
@@ -79,8 +104,10 @@ export function buildMonthlyReportCsv(
       "כמות מפגשים",
       "בוצעו",
       "בוטלו",
-      "שעות מדריך",
-      "שעות חברה",
+      "הכנסה בפועל",
+      "הכנסה פוטנציאלית",
+      "רווח בפועל",
+      "רווח פוטנציאלי",
     ]),
   );
 
@@ -91,8 +118,10 @@ export function buildMonthlyReportCsv(
         row.sessionCount,
         row.completedCount,
         row.cancelledCount,
-        formatSessionHours(row.instructorHours),
-        formatSessionHours(row.companyHours),
+        formatCurrency(row.actualRevenue),
+        formatCurrency(row.potentialRevenue),
+        formatCurrency(row.actualProfit),
+        formatCurrency(row.potentialProfit),
       ]),
     );
   }
@@ -105,8 +134,10 @@ export function buildMonthlyReportCsv(
       "מוסד",
       "מדריך",
       "כמות מפגשים",
-      "שעות מדריך",
-      "שעות חברה",
+      "הכנסה בפועל",
+      "הכנסה פוטנציאלית",
+      "שכר מדריכים בפועל",
+      "רווח בפועל",
       "סטטוס עיקרי",
     ]),
   );
@@ -118,8 +149,10 @@ export function buildMonthlyReportCsv(
         row.institutionName ?? "—",
         row.instructorName,
         row.sessionCount,
-        formatSessionHours(row.instructorHours),
-        formatSessionHours(row.companyHours),
+        formatCurrency(row.actualRevenue),
+        formatCurrency(row.potentialRevenue),
+        formatCurrency(row.actualInstructorPayout),
+        formatCurrency(row.actualProfit),
         COURSE_STATUS_LABELS[row.courseStatus],
       ]),
     );

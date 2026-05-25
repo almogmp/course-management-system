@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { InstitutionCoordinatorsPanel } from "@/components/institutions/institution-coordinators-panel";
+import { InstitutionEditForm } from "@/components/institutions/institution-edit-form";
 import { Container } from "@/components/ui/container";
 import { requireAdmin } from "@/lib/auth/guards";
 import { getInstitutionCoordinators } from "@/lib/institutions/get-institution-coordinators";
@@ -18,6 +19,7 @@ type InstitutionDetailPageProps = {
 };
 
 const successMessages: Record<string, string> = {
+  institution_updated: "פרטי המוסד עודכנו.",
   coordinator_created: "הרכז נוסף בהצלחה.",
   coordinator_updated: "פרטי הרכז עודכנו.",
   coordinator_removed: "הרכז הושבת.",
@@ -30,11 +32,19 @@ export default async function InstitutionDetailPage({
   await requireAdmin();
 
   const supabase = await createServerSupabaseClient();
-  const { data: institution, error } = await supabase
-    .from("institutions")
-    .select("id, name, city, phone, coordinator")
-    .eq("id", params.institutionId)
-    .maybeSingle();
+  const [{ data: institution, error }, { data: suppliers, error: suppliersError }] =
+    await Promise.all([
+      supabase
+        .from("institutions")
+        .select("id, name, city, phone, coordinator, primary_supplier_id, is_own_supplier")
+        .eq("id", params.institutionId)
+        .maybeSingle(),
+      supabase.from("primary_suppliers").select("id, name").eq("is_active", true).order("name"),
+    ]);
+
+  if (suppliersError) {
+    throw new Error(suppliersError.message);
+  }
 
   if (error) {
     throw new Error(error.message);
@@ -90,6 +100,18 @@ export default async function InstitutionDetailPage({
           {errorMessage}
         </p>
       ) : null}
+
+      <InstitutionEditForm
+        institution={{
+          id: institution.id,
+          name: institution.name,
+          city: institution.city,
+          phone: institution.phone,
+          primary_supplier_id: institution.primary_supplier_id,
+          is_own_supplier: institution.is_own_supplier,
+        }}
+        suppliers={suppliers ?? []}
+      />
 
       <InstitutionCoordinatorsPanel
         institutionId={institution.id}

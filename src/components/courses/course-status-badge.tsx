@@ -10,6 +10,7 @@ const statusStyles: Record<CourseStatus, string> = {
   active: "border-green-200 bg-green-50 text-green-800",
   frozen: "border-amber-200 bg-amber-50 text-amber-900",
   ended: "border-border bg-muted text-muted-foreground",
+  archived: "border-border bg-muted/80 text-muted-foreground",
 };
 
 export function CourseStatusBadge({ status, className }: CourseStatusBadgeProps) {

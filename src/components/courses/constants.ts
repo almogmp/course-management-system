@@ -6,4 +6,5 @@ export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   active: "פעיל",
   frozen: "מוקפא",
   ended: "הסתיים",
+  archived: "בארכיון",
 };

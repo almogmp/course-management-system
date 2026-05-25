@@ -17,10 +17,10 @@ export function InstructorSessionsList({ sessions }: InstructorSessionsListProps
         {sessions.map((session) => (
           <li
             key={session.id}
-            className="rounded-xl border border-border bg-surface p-4 text-start"
+            className="rounded-xl border border-border bg-surface p-4 text-center"
           >
-            <div className="flex flex-col gap-3">
-              <div className="space-y-1">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-full space-y-1">
                 <p className="text-sm font-medium text-foreground">
                   {formatSessionDate(session.session_date)}
                 </p>
@@ -51,7 +51,7 @@ export function InstructorSessionsList({ sessions }: InstructorSessionsListProps
       </ul>
 
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block">
-        <table className="w-full min-w-[880px] text-start text-sm">
+        <table className="app-table w-full min-w-[880px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">

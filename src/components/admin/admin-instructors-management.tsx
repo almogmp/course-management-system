@@ -7,7 +7,9 @@ import {
   setInstructorActiveAction,
   updateInstructorAction,
 } from "@/app/(app)/admin/instructors/actions";
+import { AdminDeleteDialog } from "@/components/admin/admin-delete-dialog";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import type { AdminInstructorListItem } from "@/lib/instructors/get-admin-instructors";
 
 type AdminInstructorsManagementProps = {
@@ -58,27 +60,16 @@ export function AdminInstructorsManagement({ instructors }: AdminInstructorsMana
             {instructors.map((instructor) => {
               const isEditing = editingId === instructor.id;
               const updateAction = updateInstructorAction.bind(null, instructor.id);
-              const deactivateAction = setInstructorActiveAction.bind(
-                null,
-                instructor.id,
-                instructor.user_id,
-                false,
-              );
-              const activateAction = setInstructorActiveAction.bind(
-                null,
-                instructor.id,
-                instructor.user_id,
-                true,
-              );
-
+              const deactivateAction = setInstructorActiveAction.bind(null, instructor.id, false);
+              const activateAction = setInstructorActiveAction.bind(null, instructor.id, true);
               return (
                 <li
                   key={instructor.id}
-                  className="rounded-xl border border-border bg-surface p-4 sm:p-5"
+                  className="rounded-xl border border-border bg-surface p-4 text-center sm:p-5 sm:text-start"
                 >
                   {isEditing ? (
                     <form action={updateAction} className="space-y-3">
-                      <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <input
                           name="full_name"
                           type="text"
@@ -102,6 +93,32 @@ export function AdminInstructorsManagement({ instructors }: AdminInstructorsMana
                           className={inputClassName}
                           dir="ltr"
                         />
+                        <div className="space-y-1 sm:col-span-2 lg:col-span-4">
+                          <label
+                            htmlFor={`new-password-${instructor.id}`}
+                            className="block text-sm font-medium text-foreground"
+                          >
+                            סיסמה חדשה
+                          </label>
+                          <input
+                            id={`new-password-${instructor.id}`}
+                            name="new_password"
+                            type="password"
+                            autoComplete="new-password"
+                            placeholder={
+                              instructor.user_id
+                                ? "השאר ריק כדי לא לשנות"
+                                : "הזן סיסמה ליצירת חשבון התחברות"
+                            }
+                            className={inputClassName}
+                            dir="ltr"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {instructor.user_id
+                              ? "ריק = הסיסמה הנוכחית נשמרת. לא ניתן לצפות בסיסמה הקיימת."
+                              : "מדריך ללא חשבון — הזנת סיסמה תיצור משתמש התחברות."}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Button type="submit" className="min-h-9">
@@ -118,8 +135,8 @@ export function AdminInstructorsManagement({ instructors }: AdminInstructorsMana
                       </div>
                     </form>
                   ) : (
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="space-y-1 text-start">
+                    <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="space-y-1 text-center sm:text-start">
                         <p className="text-lg font-semibold text-foreground">{instructor.full_name}</p>
                         <p className="text-sm text-muted-foreground" dir="ltr">
                           {instructor.email}
@@ -127,7 +144,7 @@ export function AdminInstructorsManagement({ instructors }: AdminInstructorsMana
                         <p className="text-sm text-muted-foreground" dir="ltr">
                           {instructor.phone}
                         </p>
-                        <div className="flex flex-wrap gap-2 pt-1 text-xs">
+                        <div className="flex flex-wrap justify-center gap-2 pt-1 text-xs sm:justify-start">
                           <span className="rounded-full bg-muted px-2 py-1 text-muted-foreground">
                             {approvalLabels[instructor.approval_status]}
                           </span>
@@ -142,7 +159,7 @@ export function AdminInstructorsManagement({ instructors }: AdminInstructorsMana
                           </span>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
                         <Button
                           type="button"
                           variant="secondary"
@@ -151,25 +168,28 @@ export function AdminInstructorsManagement({ instructors }: AdminInstructorsMana
                         >
                           עריכה
                         </Button>
-                        {instructor.user_id ? (
-                          instructor.is_active ? (
-                            <form action={deactivateAction}>
-                              <Button
-                                type="submit"
-                                variant="secondary"
-                                className="min-h-9 border-red-200 text-red-900 hover:bg-red-50"
-                              >
-                                השבתה
-                              </Button>
-                            </form>
-                          ) : (
-                            <form action={activateAction}>
-                              <Button type="submit" className="min-h-9">
-                                הפעלה
-                              </Button>
-                            </form>
-                          )
-                        ) : null}
+                        {instructor.is_active ? (
+                          <form action={deactivateAction}>
+                            <ConfirmSubmitButton
+                              variant="danger"
+                              idleLabel="השבת מדריך"
+                              confirmMessage={`להשבית את ${instructor.full_name}? מפגשים ודוחות קיימים יישמרו; המדריך לא יופיע בבחירות חדשות.`}
+                            />
+                          </form>
+                        ) : (
+                          <form action={activateAction}>
+                            <Button type="submit" className="min-h-9">
+                              הפעל מדריך
+                            </Button>
+                          </form>
+                        )}
+                        <AdminDeleteDialog
+                          entityType="instructor"
+                          entityId={instructor.id}
+                          entityLabel={instructor.full_name}
+                          returnPath="/admin/instructors"
+                          triggerLabel="מחק מדריך"
+                        />
                       </div>
                     </div>
                   )}

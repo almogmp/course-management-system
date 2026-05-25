@@ -17,7 +17,9 @@ const instructorNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
+  { href: "/admin/reports", label: "דוחות" },
   { href: "/admin/instructors", label: "מדריכים" },
+  { href: "/admin/payroll", label: "שכר" },
   { href: "/admin/instructor-approvals", label: "אישורי מדריכים" },
   { href: "/institutions", label: "מוסדות" },
   { href: "/suppliers", label: "ספקים" },
@@ -29,9 +31,10 @@ type SiteHeaderProps = {
 
 export async function SiteHeader({ className }: SiteHeaderProps) {
   const { user, isAdmin } = await getAuthSnapshot();
+  const homeHref = user ? "/dashboard" : "/";
 
   const navItems = [
-    ...publicNavItems,
+    ...(user ? [] : publicNavItems),
     ...(user ? instructorNavItems : []),
     ...(isAdmin ? adminNavItems : []),
   ];
@@ -44,7 +47,7 @@ export async function SiteHeader({ className }: SiteHeaderProps) {
       )}
     >
       <Container className="flex min-h-14 items-center justify-between gap-4 py-3 sm:min-h-16">
-        <Link href="/" className="text-base font-bold text-foreground sm:text-lg">
+        <Link href={homeHref} className="text-base font-bold text-foreground sm:text-lg">
           {siteConfig.name}
         </Link>
 

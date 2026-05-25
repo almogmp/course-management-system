@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { createCourseAction } from "@/app/(app)/courses/actions";
+import { CourseRateFields } from "@/components/courses/course-rate-fields";
 import { Button } from "@/components/ui/button";
 import type { CourseFormOptions } from "@/lib/courses/get-course-form-options";
 
@@ -17,6 +18,12 @@ const inputClassName =
 
 export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProps) {
   const [institutionId, setInstitutionId] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+
+  const selectedInstitution = useMemo(
+    () => options.institutions.find((row) => row.id === institutionId),
+    [options.institutions, institutionId],
+  );
 
   const coordinatorsForInstitution = useMemo(
     () => options.coordinators.filter((row) => row.institution_id === institutionId),
@@ -66,7 +73,16 @@ export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProp
             name="institution_id"
             required
             value={institutionId}
-            onChange={(event) => setInstitutionId(event.target.value)}
+            onChange={(event) => {
+              const nextId = event.target.value;
+              setInstitutionId(nextId);
+              const institution = options.institutions.find((row) => row.id === nextId);
+              if (institution?.primary_supplier_id && !institution.is_own_supplier) {
+                setSupplierId(institution.primary_supplier_id);
+              } else {
+                setSupplierId("");
+              }
+            }}
             className={inputClassName}
           >
             <option value="">בחרו מוסד</option>
@@ -105,7 +121,14 @@ export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProp
             <label htmlFor="course-supplier" className="block text-sm font-medium text-foreground">
               ספק ראשי
             </label>
-            <select id="course-supplier" name="primary_supplier_id" required className={inputClassName}>
+            <select
+              id="course-supplier"
+              name="primary_supplier_id"
+              required
+              value={supplierId}
+              onChange={(event) => setSupplierId(event.target.value)}
+              className={inputClassName}
+            >
               <option value="">בחרו ספק</option>
               {options.suppliers.map((supplier) => (
                 <option key={supplier.id} value={supplier.id}>
@@ -113,6 +136,11 @@ export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProp
                 </option>
               ))}
             </select>
+            {selectedInstitution?.is_own_supplier ? (
+              <p className="text-xs text-muted-foreground">
+                המוסד מסומן כספק עצמי — בחרו ספק לקורס או צרו ספק תואם.
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -129,6 +157,8 @@ export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProp
             </select>
           </div>
         </div>
+
+        <CourseRateFields />
 
         <div className="space-y-2">
           <label htmlFor="target-hours" className="block text-sm font-medium text-foreground">

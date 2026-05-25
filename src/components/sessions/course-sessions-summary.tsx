@@ -56,7 +56,11 @@ export function CourseSessionsSummary({
   ] as const;
 
   return (
-    <section aria-label="סיכום שעות קורס" className="space-y-3">
+    <section
+      id="course-hours"
+      aria-label="סיכום שעות קורס"
+      className="scroll-mt-24 space-y-3"
+    >
       {summary.exceedsTarget ? (
         <p
           className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"

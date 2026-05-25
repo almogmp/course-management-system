@@ -1,3 +1,4 @@
+import { CalendarDayHeader } from "@/components/calendar/calendar-day-header";
 import { CompactCalendarSessionCard } from "@/components/calendar/compact-calendar-session-card";
 import { WeeklyCalendarEmptyState } from "@/components/calendar/weekly-calendar-empty-state";
 import type { WeeklyCalendarSession } from "@/components/calendar/types";
@@ -49,20 +50,16 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
 
           return (
             <section key={day.dateKey} className="text-start">
-              <header
-                className={cn(
-                  "mb-2 flex items-baseline gap-2 border-b border-border pb-2",
-                  day.isToday && "border-primary",
-                )}
-              >
-                <h3 className={cn("text-sm font-semibold", day.isToday ? "text-primary" : "text-foreground")}>
-                  {day.label}
-                </h3>
-                <span className={cn("text-sm", day.isToday ? "text-primary" : "text-muted-foreground")}>
-                  {day.dayNumber}
-                  {daySessions.length > 0 ? ` · ${daySessions.length} מפגשים` : ""}
-                </span>
-              </header>
+              <div className="mb-2">
+                <CalendarDayHeader
+                  weekdayLabel={day.label}
+                  dayNumber={day.dayNumber}
+                  isToday={day.isToday}
+                  hebrewDateLabel={day.hebrewDateLabel}
+                  holidays={day.holidays}
+                  sessionCount={daySessions.length}
+                />
+              </div>
               {daySessions.length === 0 ? (
                 <p className="text-xs text-muted-foreground">אין מפגשים</p>
               ) : (
@@ -85,22 +82,17 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
                 day.isToday ? "border-primary ring-2 ring-primary/20" : "border-border",
               )}
             >
-              <header
-                className={cn(
-                  "mb-2 shrink-0 border-b border-border pb-1.5 text-center",
-                  day.isToday && "border-primary",
-                )}
-              >
-                <p className={cn("text-xs font-medium", day.isToday ? "text-primary" : "text-muted-foreground")}>
-                  {day.label}
-                </p>
-                <p className={cn("text-base font-bold", day.isToday ? "text-primary" : "text-foreground")}>
-                  {day.dayNumber}
-                </p>
-                {daySessions.length > 0 ? (
-                  <p className="text-[10px] text-muted-foreground">{daySessions.length} מפגשים</p>
-                ) : null}
-              </header>
+              <div className="mb-2">
+                <CalendarDayHeader
+                  weekdayLabel={day.label}
+                  dayNumber={day.dayNumber}
+                  isToday={day.isToday}
+                  hebrewDateLabel={day.hebrewDateLabel}
+                  holidays={day.holidays}
+                  sessionCount={daySessions.length}
+                  compact
+                />
+              </div>
               {daySessions.length === 0 ? (
                 <p className="flex flex-1 items-center justify-center text-center text-xs text-muted-foreground">
                   —

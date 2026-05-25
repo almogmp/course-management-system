@@ -15,7 +15,7 @@ export async function getAdminInstructors(): Promise<AdminInstructorListItem[]> 
 
   const { data: instructors, error } = await supabase
     .from("instructors")
-    .select("id, user_id, full_name, phone, email")
+    .select("id, user_id, full_name, phone, email, is_active")
     .order("full_name", { ascending: true });
 
   if (error) {
@@ -28,13 +28,13 @@ export async function getAdminInstructors(): Promise<AdminInstructorListItem[]> 
 
   const profileByUserId = new Map<
     string,
-    { approval_status: "pending" | "approved" | "rejected"; notifications_enabled: boolean }
+    { approval_status: "pending" | "approved" | "rejected" }
   >();
 
   if (userIds.length > 0) {
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, approval_status, notifications_enabled")
+      .select("id, approval_status")
       .in("id", userIds);
 
     if (profilesError) {
@@ -44,7 +44,6 @@ export async function getAdminInstructors(): Promise<AdminInstructorListItem[]> 
     for (const profile of profiles ?? []) {
       profileByUserId.set(profile.id, {
         approval_status: profile.approval_status,
-        notifications_enabled: profile.notifications_enabled,
       });
     }
   }
@@ -59,7 +58,7 @@ export async function getAdminInstructors(): Promise<AdminInstructorListItem[]> 
       phone: row.phone,
       email: row.email,
       approval_status: profile?.approval_status ?? "none",
-      is_active: profile ? profile.notifications_enabled : true,
+      is_active: row.is_active,
     };
   });
 }

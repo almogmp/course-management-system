@@ -1,3 +1,4 @@
+import { CalendarDayHeader } from "@/components/calendar/calendar-day-header";
 import { CompactCalendarSessionCard } from "@/components/calendar/compact-calendar-session-card";
 import type { WeeklyCalendarSession } from "@/components/calendar/types";
 import type { MonthCalendarDay } from "@/components/calendar/month-calendar-utils";
@@ -52,19 +53,16 @@ export function MonthlyCalendar({ calendarDays, sessions }: MonthlyCalendarProps
                 !day.isToday && !day.isCurrentMonth && "border-border/60 bg-muted/30",
               )}
             >
-              <div
-                className={cn(
-                  "mb-1 flex shrink-0 items-center justify-between gap-1 px-0.5 text-xs font-semibold",
-                  day.isCurrentMonth ? "text-foreground" : "text-muted-foreground",
-                  day.isToday && "text-primary",
-                )}
-              >
-                <span>{day.dayNumber}</span>
-                {daySessions.length > 0 ? (
-                  <span className="text-[10px] font-normal text-muted-foreground">
-                    {daySessions.length}
-                  </span>
-                ) : null}
+              <div className="mb-1 shrink-0 px-0.5">
+                <CalendarDayHeader
+                  weekdayLabel=""
+                  dayNumber={day.dayNumber}
+                  isToday={day.isToday}
+                  hebrewDateLabel={day.hebrewDateLabel}
+                  holidays={day.holidays}
+                  sessionCount={daySessions.length}
+                  compact
+                />
               </div>
 
               <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain">

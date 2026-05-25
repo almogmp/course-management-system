@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { getAuthSnapshot } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
 type DashboardShellProps = {
@@ -8,15 +9,25 @@ type DashboardShellProps = {
   className?: string;
 };
 
-const navItems = [
+const baseNavItems = [
   { href: "/dashboard", label: "דשבורד" },
   { href: "/courses", label: "קורסים" },
   { href: "/sessions", label: "מפגשים" },
+] as const;
+
+const adminNavItems = [
+  { href: "/admin/courses/with-sessions", label: "קורס + מפגשים" },
+  { href: "/admin/reports", label: "דוחות" },
+  { href: "/admin/instructors", label: "מדריכים" },
+  { href: "/admin/payroll", label: "שכר" },
   { href: "/institutions", label: "מוסדות" },
   { href: "/suppliers", label: "ספקים" },
 ] as const;
 
-export function DashboardShell({ children, className }: DashboardShellProps) {
+export async function DashboardShell({ children, className }: DashboardShellProps) {
+  const { isAdmin } = await getAuthSnapshot();
+  const navItems = isAdmin ? [...baseNavItems, ...adminNavItems] : [...baseNavItems];
+
   return (
     <div
       className={cn("flex min-h-dvh flex-col bg-background lg:flex-row", className)}

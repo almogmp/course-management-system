@@ -1,7 +1,12 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type CourseFormOptions = {
-  institutions: Array<{ id: string; name: string }>;
+  institutions: Array<{
+    id: string;
+    name: string;
+    primary_supplier_id: string | null;
+    is_own_supplier: boolean;
+  }>;
   suppliers: Array<{ id: string; name: string }>;
   instructors: Array<{ id: string; full_name: string }>;
   coordinators: Array<{
@@ -16,9 +21,13 @@ export async function getCourseFormOptions(): Promise<CourseFormOptions> {
 
   const [{ data: institutions }, { data: suppliers }, { data: instructors }, { data: coordinators }] =
     await Promise.all([
-      supabase.from("institutions").select("id, name").order("name"),
-      supabase.from("primary_suppliers").select("id, name").order("name"),
-      supabase.from("instructors").select("id, full_name").order("full_name"),
+      supabase
+        .from("institutions")
+        .select("id, name, primary_supplier_id, is_own_supplier")
+        .eq("is_active", true)
+        .order("name"),
+      supabase.from("primary_suppliers").select("id, name").eq("is_active", true).order("name"),
+      supabase.from("instructors").select("id, full_name").eq("is_active", true).order("full_name"),
       supabase.from("institution_coordinators").select("id, institution_id, full_name").eq("is_active", true).order("full_name"),
     ]);
 

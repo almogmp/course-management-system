@@ -51,6 +51,7 @@ export type Database = {
           phone: string;
           email: string;
           color: string;
+          is_active: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -61,6 +62,7 @@ export type Database = {
           phone: string;
           email: string;
           color: string;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -71,6 +73,7 @@ export type Database = {
           phone?: string;
           email?: string;
           color?: string;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -85,6 +88,9 @@ export type Database = {
           phone: string;
           coordinator: string;
           notes: string | null;
+          primary_supplier_id: string | null;
+          is_own_supplier: boolean;
+          is_active: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -96,6 +102,9 @@ export type Database = {
           phone: string;
           coordinator: string;
           notes?: string | null;
+          primary_supplier_id?: string | null;
+          is_own_supplier?: boolean;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -107,6 +116,9 @@ export type Database = {
           phone?: string;
           coordinator?: string;
           notes?: string | null;
+          primary_supplier_id?: string | null;
+          is_own_supplier?: boolean;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -120,6 +132,7 @@ export type Database = {
           phone: string;
           email: string;
           notes: string | null;
+          is_active: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -130,6 +143,7 @@ export type Database = {
           phone: string;
           email: string;
           notes?: string | null;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -140,6 +154,7 @@ export type Database = {
           phone?: string;
           email?: string;
           notes?: string | null;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -235,10 +250,80 @@ export type Database = {
         };
         Relationships: [];
       };
+      session_series: {
+        Row: {
+          id: string;
+          course_id: string;
+          start_date: string;
+          end_date: string;
+          weekdays: number[];
+          start_time: string;
+          end_time: string;
+          assigned_instructor_id: string;
+          instructor_hours: number;
+          company_hours: number;
+          default_status: Database["public"]["Enums"]["session_status"];
+          institution_hourly_rate: number | null;
+          instructor_hourly_rate: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          course_id: string;
+          start_date: string;
+          end_date: string;
+          weekdays: number[];
+          start_time: string;
+          end_time: string;
+          assigned_instructor_id: string;
+          instructor_hours: number;
+          company_hours: number;
+          default_status?: Database["public"]["Enums"]["session_status"];
+          institution_hourly_rate?: number | null;
+          instructor_hourly_rate?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          course_id?: string;
+          start_date?: string;
+          end_date?: string;
+          weekdays?: number[];
+          start_time?: string;
+          end_time?: string;
+          assigned_instructor_id?: string;
+          instructor_hours?: number;
+          company_hours?: number;
+          default_status?: Database["public"]["Enums"]["session_status"];
+          institution_hourly_rate?: number | null;
+          instructor_hourly_rate?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "session_series_course_id_fkey";
+            columns: ["course_id"];
+            isOneToOne: false;
+            referencedRelation: "courses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "session_series_assigned_instructor_id_fkey";
+            columns: ["assigned_instructor_id"];
+            isOneToOne: false;
+            referencedRelation: "instructors";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       sessions: {
         Row: {
           id: string;
           course_id: string;
+          series_id: string | null;
           session_date: string;
           start_time: string;
           end_time: string;
@@ -254,12 +339,15 @@ export type Database = {
           actual_start_time: string | null;
           actual_end_time: string | null;
           school_year: string;
+          institution_hourly_rate: number | null;
+          instructor_hourly_rate: number | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           course_id: string;
+          series_id?: string | null;
           session_date: string;
           start_time: string;
           end_time: string;
@@ -275,12 +363,15 @@ export type Database = {
           actual_start_time?: string | null;
           actual_end_time?: string | null;
           school_year: string;
+          institution_hourly_rate?: number | null;
+          instructor_hourly_rate?: number | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           course_id?: string;
+          series_id?: string | null;
           session_date?: string;
           start_time?: string;
           end_time?: string;
@@ -296,6 +387,8 @@ export type Database = {
           actual_start_time?: string | null;
           actual_end_time?: string | null;
           school_year?: string;
+          institution_hourly_rate?: number | null;
+          instructor_hourly_rate?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -305,6 +398,13 @@ export type Database = {
             columns: ["course_id"];
             isOneToOne: false;
             referencedRelation: "courses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sessions_series_id_fkey";
+            columns: ["series_id"];
+            isOneToOne: false;
+            referencedRelation: "session_series";
             referencedColumns: ["id"];
           },
           {
@@ -329,7 +429,7 @@ export type Database = {
     Enums: {
       user_role: "admin" | "instructor";
       approval_status: "pending" | "approved" | "rejected";
-      course_status: "active" | "frozen" | "ended";
+      course_status: "active" | "frozen" | "ended" | "archived";
       session_status:
         | "planned"
         | "arrived"

@@ -45,8 +45,63 @@
   }
 }
 
+@layer components {
+  /* Desktop tables: centered cells (RTL layout preserved on page/cards). */
+  table.app-table {
+    @apply text-center;
+  }
+
+  table.app-table thead tr,
+  table.app-table tbody tr {
+    @apply text-center align-middle;
+  }
+
+  table.app-table th,
+  table.app-table td {
+    @apply text-center align-middle;
+  }
+
+  table.app-table .app-table-notes {
+    @apply mx-auto max-w-xs whitespace-normal;
+  }
+
+  table.app-table .app-table-actions {
+    @apply flex flex-wrap items-center justify-center gap-2;
+  }
+
+  .mobile-card {
+    @apply rounded-xl border border-border bg-surface p-4 text-center;
+  }
+
+  .mobile-card-body {
+    @apply flex flex-col items-center gap-3;
+  }
+
+  .mobile-card-field {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .mobile-card-actions {
+    @apply flex w-full flex-col items-center justify-center gap-2;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  @media print {
+    .print-hidden {
+      display: none !important;
+    }
+
+    .print-only {
+      display: block !important;
+    }
+
+    body {
+      background: white !important;
+    }
   }
 }

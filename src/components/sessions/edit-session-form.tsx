@@ -15,6 +15,7 @@ import {
 import { formatTimeForInput } from "@/components/sessions/format";
 import type { CourseSessionListItem } from "@/components/sessions/get-course-sessions";
 import { SessionFormSubmitButton } from "@/components/sessions/session-form-submit-button";
+import { SessionRateFields } from "@/components/sessions/session-rate-fields";
 import { InstructorSelectField } from "@/components/sessions/instructor-select-field";
 import type { InstructorSelectOption } from "@/lib/instructors/get-instructors-for-select";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ type EditSessionFormProps = {
   courseId: string;
   session: CourseSessionListItem;
   instructors: InstructorSelectOption[];
+  courseInstitutionRate: number;
+  courseInstructorRate: number;
   onCancel: () => void;
   onSuccess: () => void;
 };
@@ -36,6 +39,8 @@ export function EditSessionForm({
   courseId,
   session,
   instructors,
+  courseInstitutionRate,
+  courseInstructorRate,
   onCancel,
   onSuccess,
 }: EditSessionFormProps) {
@@ -193,6 +198,14 @@ export function EditSessionForm({
             />
           </div>
         </div>
+
+        <SessionRateFields
+          idPrefix={`edit-${session.id}`}
+          courseInstitutionRate={courseInstitutionRate}
+          courseInstructorRate={courseInstructorRate}
+          defaultInstitutionOverride={session.institution_hourly_rate}
+          defaultInstructorOverride={session.instructor_hourly_rate}
+        />
 
         <div className="space-y-2">
           <label

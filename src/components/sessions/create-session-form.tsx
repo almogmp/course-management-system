@@ -9,6 +9,7 @@ import {
   type CreateSessionFormState,
 } from "@/app/(app)/courses/[courseId]/sessions/actions";
 import { SessionFormSubmitButton } from "@/components/sessions/session-form-submit-button";
+import { SessionRateFields } from "@/components/sessions/session-rate-fields";
 import { InstructorSelectField } from "@/components/sessions/instructor-select-field";
 import { SESSION_FORM_STATUS_OPTIONS } from "@/components/sessions/constants";
 import type { InstructorSelectOption } from "@/lib/instructors/get-instructors-for-select";
@@ -17,6 +18,8 @@ type CreateSessionFormProps = {
   courseId: string;
   instructors: InstructorSelectOption[];
   defaultAssignedInstructorId?: string;
+  courseInstitutionRate: number;
+  courseInstructorRate: number;
 };
 
 const inputClassName =
@@ -28,6 +31,8 @@ export function CreateSessionForm({
   courseId,
   instructors,
   defaultAssignedInstructorId,
+  courseInstitutionRate,
+  courseInstructorRate,
 }: CreateSessionFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -182,6 +187,11 @@ export function CreateSessionForm({
             />
           </div>
         </div>
+
+        <SessionRateFields
+          courseInstitutionRate={courseInstitutionRate}
+          courseInstructorRate={courseInstructorRate}
+        />
 
         <div className="space-y-2">
           <label htmlFor="session-notes" className="block text-sm font-medium text-foreground">

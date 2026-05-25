@@ -1,4 +1,5 @@
 import { formatSessionHours } from "@/components/sessions/format";
+import { formatCurrency } from "@/lib/financial/format-currency";
 import type { InstitutionReportRow } from "@/lib/reports/types";
 
 type ReportsInstitutionTableProps = {
@@ -26,7 +27,7 @@ export function ReportsInstitutionTable({ rows }: ReportsInstitutionTableProps) 
         {rows.map((row) => (
           <li
             key={row.institutionId}
-            className="rounded-xl border border-border bg-surface p-4 text-start"
+            className="rounded-xl border border-border bg-surface p-4 text-center"
           >
             <p className="font-semibold text-foreground">{row.institutionName}</p>
             <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
@@ -47,8 +48,12 @@ export function ReportsInstitutionTable({ rows }: ReportsInstitutionTableProps) 
                 <dd className="font-medium">{formatSessionHours(row.instructorHours)}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">שעות חברה</dt>
-                <dd className="font-medium">{formatSessionHours(row.companyHours)}</dd>
+                <dt className="text-muted-foreground">הכנסה בפועל</dt>
+                <dd className="font-medium">{formatCurrency(row.actualRevenue)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">רווח בפועל</dt>
+                <dd className="font-medium">{formatCurrency(row.actualProfit)}</dd>
               </div>
             </dl>
           </li>
@@ -56,15 +61,17 @@ export function ReportsInstitutionTable({ rows }: ReportsInstitutionTableProps) 
       </ul>
 
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block">
-        <table className="w-full min-w-[760px] text-start text-sm">
+        <table className="app-table w-full min-w-[760px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 font-medium text-muted-foreground">מוסד</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">כמות מפגשים</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">בוצעו</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">בוטלו</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">שעות מדריך</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">שעות חברה</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">הכנסה בפועל</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">הכנסה פוטנציאלית</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">רווח בפועל</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">רווח פוטנציאלי</th>
             </tr>
           </thead>
           <tbody>
@@ -75,10 +82,16 @@ export function ReportsInstitutionTable({ rows }: ReportsInstitutionTableProps) 
                 <td className="px-4 py-3 text-muted-foreground">{row.completedCount}</td>
                 <td className="px-4 py-3 text-muted-foreground">{row.cancelledCount}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatSessionHours(row.instructorHours)}
+                  {formatCurrency(row.actualRevenue)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatSessionHours(row.companyHours)}
+                  {formatCurrency(row.potentialRevenue)}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {formatCurrency(row.actualProfit)}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {formatCurrency(row.potentialProfit)}
                 </td>
               </tr>
             ))}

@@ -14,6 +14,52 @@ function institutionPath(institutionId: string): string {
   return `/institutions/${institutionId}`;
 }
 
+export async function updateInstitutionAction(
+  institutionId: string,
+  formData: FormData,
+): Promise<void> {
+  await requireAdmin();
+
+  const name = String(formData.get("name") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const isOwnSupplier = formData.get("is_own_supplier") === "1";
+  const primarySupplierId = String(formData.get("primary_supplier_id") ?? "").trim();
+
+  if (!name || !city) {
+    redirect(
+      `${institutionPath(institutionId)}?error=${encodeURIComponent("יש למלא שם ועיר.")}`,
+    );
+  }
+
+  if (!isOwnSupplier && !primarySupplierId) {
+    redirect(
+      `${institutionPath(institutionId)}?error=${encodeURIComponent("יש לבחור ספק או לסמן שהמוסד הוא הספק.")}`,
+    );
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase
+    .from("institutions")
+    .update({
+      name,
+      city,
+      phone: phone || "",
+      is_own_supplier: isOwnSupplier,
+      primary_supplier_id: isOwnSupplier ? null : primarySupplierId,
+    })
+    .eq("id", institutionId);
+
+  if (error) {
+    redirect(`${institutionPath(institutionId)}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(institutionPath(institutionId));
+  revalidatePath("/institutions");
+  revalidatePath("/courses");
+  redirect(`${institutionPath(institutionId)}?success=institution_updated`);
+}
+
 export async function createInstitutionCoordinatorAction(
   institutionId: string,
   formData: FormData,

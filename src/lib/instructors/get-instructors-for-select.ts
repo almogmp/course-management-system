@@ -12,6 +12,7 @@ export async function getInstructorsForSelect(): Promise<InstructorSelectOption[
   const { data, error } = await supabase
     .from("instructors")
     .select("id, full_name")
+    .eq("is_active", true)
     .order("full_name", { ascending: true });
 
   if (error) {

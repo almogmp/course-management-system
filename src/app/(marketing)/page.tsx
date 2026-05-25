@@ -1,8 +1,17 @@
+import { redirect } from "next/navigation";
+
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { siteConfig } from "@/config/site";
+import { getAuthSnapshot } from "@/lib/auth/session";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { user } = await getAuthSnapshot();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <Container as="main" className="flex flex-1 flex-col">
       <section className="flex flex-1 flex-col justify-center gap-6 py-8 sm:gap-8 sm:py-12 lg:py-16">

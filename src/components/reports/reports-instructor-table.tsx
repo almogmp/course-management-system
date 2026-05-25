@@ -1,8 +1,9 @@
 import { formatSessionHours } from "@/components/sessions/format";
-import type { InstructorWorkloadRow } from "@/lib/dashboard/workload";
+import { formatCurrency } from "@/lib/financial/format-currency";
+import type { InstructorReportRow } from "@/lib/reports/types";
 
 type ReportsInstructorTableProps = {
-  rows: InstructorWorkloadRow[];
+  rows: InstructorReportRow[];
 };
 
 function EmptyState({ message }: { message: string }) {
@@ -26,7 +27,7 @@ export function ReportsInstructorTable({ rows }: ReportsInstructorTableProps) {
         {rows.map((row) => (
           <li
             key={row.instructorId}
-            className="rounded-xl border border-border bg-surface p-4 text-start"
+            className="rounded-xl border border-border bg-surface p-4 text-center"
           >
             <p className="font-semibold text-foreground">{row.instructorName}</p>
             <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
@@ -51,8 +52,12 @@ export function ReportsInstructorTable({ rows }: ReportsInstructorTableProps) {
                 <dd className="font-medium">{formatSessionHours(row.instructorHours)}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">שעות חברה</dt>
-                <dd className="font-medium">{formatSessionHours(row.companyHours)}</dd>
+                <dt className="text-muted-foreground">שכר בפועל</dt>
+                <dd className="font-medium">{formatCurrency(row.actualInstructorPayout)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">שכר פוטנציאלי</dt>
+                <dd className="font-medium">{formatCurrency(row.potentialInstructorPayout)}</dd>
               </div>
             </dl>
           </li>
@@ -60,7 +65,7 @@ export function ReportsInstructorTable({ rows }: ReportsInstructorTableProps) {
       </ul>
 
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block">
-        <table className="w-full min-w-[880px] text-start text-sm">
+        <table className="app-table w-full min-w-[880px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 font-medium text-muted-foreground">מדריך</th>
@@ -69,7 +74,8 @@ export function ReportsInstructorTable({ rows }: ReportsInstructorTableProps) {
               <th className="px-4 py-3 font-medium text-muted-foreground">בוטלו</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">ממתינים לאישור</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">שעות מדריך</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">שעות חברה</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">שכר בפועל</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">שכר פוטנציאלי</th>
             </tr>
           </thead>
           <tbody>
@@ -84,7 +90,10 @@ export function ReportsInstructorTable({ rows }: ReportsInstructorTableProps) {
                   {formatSessionHours(row.instructorHours)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatSessionHours(row.companyHours)}
+                  {formatCurrency(row.actualInstructorPayout)}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {formatCurrency(row.potentialInstructorPayout)}
                 </td>
               </tr>
             ))}

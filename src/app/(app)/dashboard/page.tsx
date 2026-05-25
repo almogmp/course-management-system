@@ -3,12 +3,16 @@ import Link from "next/link";
 
 import { parseMonthParam } from "@/components/calendar/month-calendar-utils";
 import { AdminDashboardStatsCards } from "@/components/dashboard/admin-dashboard-stats-cards";
+import { AdminFinancialStatsCards } from "@/components/dashboard/admin-financial-stats-cards";
 import { AdminInstructorWorkloadTable } from "@/components/dashboard/admin-instructor-workload-table";
+import { InstructorPayoutStatsCards } from "@/components/dashboard/instructor-payout-stats-cards";
 import { DashboardCalendarSection } from "@/components/dashboard/dashboard-calendar-section";
 import { DashboardOperationalLoader } from "@/components/dashboard/dashboard-operational-loader";
 import { DashboardMonthSelector } from "@/components/dashboard/dashboard-month-selector";
 import { getAdminDashboardData } from "@/components/dashboard/get-admin-dashboard-data";
 import { getInstructorDashboardData } from "@/components/dashboard/get-instructor-dashboard-data";
+import { getAdminFinancialDashboard } from "@/lib/financial/get-admin-financial-dashboard";
+import { getInstructorPayoutDashboard } from "@/lib/financial/get-instructor-payout-dashboard";
 import { InstructorDashboardStatsCards } from "@/components/dashboard/instructor-dashboard-stats-cards";
 import { InstructorMonthlyWorkload } from "@/components/dashboard/instructor-monthly-workload";
 import { InstructorSessionsSection } from "@/components/dashboard/instructor-sessions-section";
@@ -31,7 +35,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const monthView = parseMonthParam(searchParams?.month);
 
   if (!isAdmin) {
-    const { sessions, stats } = await getInstructorDashboardData(monthView);
+    const [{ sessions, stats }, payoutStats] = await Promise.all([
+      getInstructorDashboardData(monthView),
+      getInstructorPayoutDashboard(monthView),
+    ]);
 
     return (
       <Container as="main" className="flex flex-1 flex-col gap-8 py-8">
@@ -51,6 +58,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
         <InstructorDashboardStatsCards stats={stats} />
 
+        <InstructorPayoutStatsCards stats={payoutStats} />
+
         <InstructorMonthlyWorkload workload={stats.workload} />
 
         <Suspense fallback={<CalendarSectionSkeleton />}>
@@ -62,7 +71,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     );
   }
 
-  const { overview, workloadRows } = await getAdminDashboardData(monthView);
+  const [{ overview, workloadRows }, financialStats] = await Promise.all([
+    getAdminDashboardData(monthView),
+    getAdminFinancialDashboard(monthView),
+  ]);
 
   return (
     <Container as="main" className="flex flex-1 flex-col gap-8 py-8">
@@ -82,9 +94,17 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       <AdminDashboardStatsCards overview={overview} />
 
+      <AdminFinancialStatsCards stats={financialStats} />
+
       <AdminInstructorWorkloadTable rows={workloadRows} />
 
       <div className="flex flex-wrap gap-2 text-start">
+        <Link
+          href="/admin/payroll"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:text-base"
+        >
+          שכר מדריכים
+        </Link>
         <Link
           href="/reports"
           className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:text-base"
