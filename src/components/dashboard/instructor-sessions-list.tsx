@@ -1,9 +1,11 @@
-import { SessionStatusBadge } from "@/components/sessions/session-status-badge";
+"use client";
+
 import {
   formatSessionDate,
   formatSessionHoursDisplay,
   formatSessionTimeRange,
 } from "@/components/sessions/format";
+import { SessionSimpleStatusSelect } from "@/components/sessions/session-simple-status-select";
 import type { InstructorDashboardSession } from "@/components/dashboard/get-instructor-dashboard-data";
 
 type InstructorSessionsListProps = {
@@ -44,7 +46,15 @@ export function InstructorSessionsList({ sessions }: InstructorSessionsListProps
                   {session.notes}
                 </p>
               ) : null}
-              <SessionStatusBadge status={session.status} />
+              <SessionSimpleStatusSelect
+                courseId={session.course_id}
+                sessionId={session.id}
+                currentStatus={session.status}
+                mode="instructor"
+                sessionDate={session.session_date}
+                startTime={session.start_time}
+                className="mx-auto"
+              />
             </div>
           </li>
         ))}
@@ -93,7 +103,15 @@ export function InstructorSessionsList({ sessions }: InstructorSessionsListProps
                   {session.institution_name ?? "—"}
                 </td>
                 <td className="px-4 py-3">
-                  <SessionStatusBadge status={session.status} />
+                  <SessionSimpleStatusSelect
+                    courseId={session.course_id}
+                    sessionId={session.id}
+                    currentStatus={session.status}
+                    mode="instructor"
+                    sessionDate={session.session_date}
+                    startTime={session.start_time}
+                    compact
+                  />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {formatSessionHoursDisplay(session.instructor_hours)}

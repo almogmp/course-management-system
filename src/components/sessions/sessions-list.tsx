@@ -6,7 +6,6 @@ import {
   formatSessionTimeRange,
 } from "@/components/sessions/format";
 import type { SessionListItem } from "@/components/sessions/get-sessions";
-import { formatSessionStatusLabel } from "@/lib/admin-reports/filters";
 import { SessionGlobalListActions } from "@/components/sessions/session-global-list-actions";
 import { SessionListFields } from "@/components/sessions/session-list-fields";
 import { MobileCard, MobileCardBody } from "@/components/ui/mobile-card";
@@ -31,7 +30,6 @@ export function SessionsList({
   listReturnPath,
 }: SessionsListProps) {
   const showInstructorHours = true;
-  const showStatus = !showAdminActions;
 
   return (
     <>
@@ -45,7 +43,6 @@ export function SessionsList({
                 linkCourse
                 showInstructorHours={showInstructorHours}
                 showInstructorName={showAdminActions}
-                showStatus={showStatus}
               />
               <SessionGlobalListActions
                 session={session}
@@ -68,7 +65,6 @@ export function SessionsList({
               {showAdminActions ? <th className={APP_TABLE_TH_CLASS}>מדריך</th> : null}
               {showInstitutionColumn ? <th className={APP_TABLE_TH_CLASS}>מוסד</th> : null}
               <th className={APP_TABLE_TH_CLASS}>שעות מדריך</th>
-              {!showAdminActions ? <th className={APP_TABLE_TH_CLASS}>סטטוס</th> : null}
               <th className={APP_TABLE_TH_CLASS}>פעולות</th>
             </tr>
           </thead>
@@ -98,9 +94,6 @@ export function SessionsList({
                 <td className={APP_TABLE_TD_CLASS}>
                   {formatSessionHoursDisplay(session.instructor_hours)}
                 </td>
-                {!showAdminActions ? (
-                  <td className={APP_TABLE_TD_CLASS}>{formatSessionStatusLabel(session.status)}</td>
-                ) : null}
                 <td className={APP_TABLE_TD_CLASS}>
                   <SessionGlobalListActions
                     session={session}

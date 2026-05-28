@@ -33,6 +33,8 @@ export function SessionGlobalListActions({
         sessionId={session.id}
         status={session.status}
         showAdminActions={showAdminActions}
+        sessionDate={session.session_date}
+        startTime={session.start_time}
       />
       <Link
         href={`/courses/${session.course_id}/sessions`}

@@ -14,7 +14,6 @@ type CourseSessionsManagementProps = {
   sessions: CourseSessionListItem[];
   instructors: InstructorSelectOption[];
   showAdminActions: boolean;
-  currentInstructorId: string | null;
   courseInstitutionRate: number;
   courseInstructorRate: number;
 };
@@ -24,7 +23,6 @@ export function CourseSessionsManagement({
   sessions,
   instructors,
   showAdminActions,
-  currentInstructorId,
   courseInstitutionRate,
   courseInstructorRate,
 }: CourseSessionsManagementProps) {
@@ -73,7 +71,6 @@ export function CourseSessionsManagement({
           sessions={filteredSessions}
           instructors={instructors}
           showAdminActions={showAdminActions}
-          currentInstructorId={currentInstructorId}
           courseInstitutionRate={courseInstitutionRate}
           courseInstructorRate={courseInstructorRate}
           editingSessionId={editingSessionId}

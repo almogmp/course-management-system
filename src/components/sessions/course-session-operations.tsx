@@ -1,9 +1,8 @@
 "use client";
 
-import { AdminQuickStatusSelect } from "@/components/sessions/admin-quick-status-select";
 import type { CourseSessionListItem } from "@/components/sessions/get-course-sessions";
 import { SessionAdminRowActions } from "@/components/sessions/session-admin-row-actions";
-import { SessionSimpleActions } from "@/components/sessions/session-simple-actions";
+import { SessionSimpleStatusSelect } from "@/components/sessions/session-simple-status-select";
 import { SessionWorkflowActions } from "@/components/sessions/session-workflow-actions";
 import { TABLE_ROW_ACTIONS_CLASS } from "@/components/ui/mobile-card-classes";
 import { cn } from "@/lib/utils";
@@ -13,7 +12,6 @@ type CourseSessionOperationsProps = {
   session: CourseSessionListItem;
   sessionLabel: string;
   showAdminActions: boolean;
-  currentInstructorId: string | null;
   isEditing: boolean;
   onEdit: (sessionId: string) => void;
   variant?: "card" | "table";
@@ -28,7 +26,6 @@ export function CourseSessionOperations({
   session,
   sessionLabel,
   showAdminActions,
-  currentInstructorId,
   isEditing,
   onEdit,
   variant = "table",
@@ -41,11 +38,14 @@ export function CourseSessionOperations({
 
   return (
     <div className={cn(wrapClass, "app-table-actions")}>
-      {showAdminActions && includeStatusSelect ? (
-        <AdminQuickStatusSelect
+      {includeStatusSelect ? (
+        <SessionSimpleStatusSelect
           courseId={courseId}
           sessionId={session.id}
           currentStatus={session.status}
+          mode={showAdminActions ? "admin" : "instructor"}
+          sessionDate={session.session_date}
+          startTime={session.start_time}
           compact={variant === "table"}
         />
       ) : null}
@@ -61,12 +61,6 @@ export function CourseSessionOperations({
         courseId={courseId}
         session={session}
         showAdminActions={showAdminActions}
-        currentInstructorId={currentInstructorId}
-      />
-      <SessionSimpleActions
-        courseId={courseId}
-        session={session}
-        currentInstructorId={currentInstructorId}
       />
     </div>
   );

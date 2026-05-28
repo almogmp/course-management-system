@@ -24,6 +24,10 @@ const ERROR_PATTERNS: Array<{ pattern: RegExp; message: string }> = [
     message: "אין הרשאה לעדכן מפגש זה.",
   },
   {
+    pattern: /מוקדם מדי לעדכן את סטטוס המפגש/i,
+    message: "מוקדם מדי לעדכן את סטטוס המפגש",
+  },
+  {
     pattern: /Instructor cannot cancel directly/i,
     message: "לא ניתן לבטל ישירות — יש לשלוח בקשה לאישור.",
   },

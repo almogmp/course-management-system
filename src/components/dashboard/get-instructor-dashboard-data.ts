@@ -12,6 +12,7 @@ import type { SupabaseServerClient } from "@/lib/supabase/server";
 
 export type InstructorDashboardSession = {
   id: string;
+  course_id: string;
   session_date: string;
   start_time: string;
   end_time: string;
@@ -24,6 +25,7 @@ export type InstructorDashboardSession = {
 
 type InstructorSessionRow = {
   id: string;
+  course_id: string;
   session_date: string;
   start_time: string;
   end_time: string;
@@ -60,7 +62,7 @@ async function fetchInstructorSessionsInRange(
   const { data, error } = await instructorClient
     .from("instructor_sessions")
     .select(
-      "id, session_date, start_time, end_time, status, instructor_hours, course_name, institution_name, cancellation_reason",
+      "id, course_id, session_date, start_time, end_time, status, instructor_hours, course_name, institution_name, cancellation_reason",
     )
     .gte("session_date", startDate)
     .lte("session_date", endDate)
@@ -80,6 +82,7 @@ async function fetchInstructorSessionsInRange(
 
   return rows.map((row) => ({
     id: row.id,
+    course_id: row.course_id,
     session_date: row.session_date,
     start_time: row.start_time,
     end_time: row.end_time,

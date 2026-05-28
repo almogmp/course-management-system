@@ -1,8 +1,12 @@
 import Link from "next/link";
 
 import type { OperationalDashboardData } from "@/components/dashboard/get-operational-dashboard-data";
-import { AdminQuickStatusSelect } from "@/components/sessions/admin-quick-status-select";
-import { SessionStatusBadge } from "@/components/sessions/session-status-badge";
+import {
+  SESSION_STATUS_LABELS,
+  sessionsListSelectValue,
+  type SessionStatus,
+} from "@/components/sessions/constants";
+import { SessionSimpleStatusSelect } from "@/components/sessions/session-simple-status-select";
 import { formatSessionDate, formatSessionTimeRange } from "@/components/sessions/format";
 
 type DashboardOperationalSectionsProps = {
@@ -50,15 +54,21 @@ function OperationalSessionList({
             ) : null}
           </div>
           <div className="flex flex-col gap-2 sm:items-end">
-            <SessionStatusBadge status={session.status} isDelayed={session.is_delayed} />
             {showQuickStatus && isAdmin ? (
-              <AdminQuickStatusSelect
+              <SessionSimpleStatusSelect
                 courseId={session.course_id}
                 sessionId={session.id}
                 currentStatus={session.status}
+                mode="admin"
+                sessionDate={session.session_date}
+                startTime={session.start_time}
                 compact
               />
-            ) : null}
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {SESSION_STATUS_LABELS[sessionsListSelectValue(session.status as SessionStatus)]}
+              </span>
+            )}
             <Link
               href={`/courses/${session.course_id}/sessions`}
               className="text-xs font-medium text-primary underline-offset-4 hover:underline"

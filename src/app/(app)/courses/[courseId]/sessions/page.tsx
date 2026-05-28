@@ -205,7 +205,6 @@ export default async function CourseSessionsPage({
         sessions={sessions}
         instructors={instructors}
         showAdminActions={showAdminActions}
-        currentInstructorId={currentInstructorId}
         courseInstitutionRate={course.institution_hourly_rate}
         courseInstructorRate={course.instructor_hourly_rate}
       />

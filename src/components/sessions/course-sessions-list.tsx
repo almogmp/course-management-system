@@ -2,8 +2,7 @@
 
 import { CourseSessionOperations } from "@/components/sessions/course-session-operations";
 import { EditSessionForm } from "@/components/sessions/edit-session-form";
-import { isSessionDelayed } from "@/lib/sessions/session-delay";
-import { SessionStatusBadge } from "@/components/sessions/session-status-badge";
+import { SessionSimpleStatusSelect } from "@/components/sessions/session-simple-status-select";
 import {
   formatSessionDate,
   formatSessionHoursDisplay,
@@ -27,7 +26,6 @@ type CourseSessionsListProps = {
   sessions: CourseSessionListItem[];
   instructors: InstructorSelectOption[];
   showAdminActions: boolean;
-  currentInstructorId: string | null;
   courseInstitutionRate: number;
   courseInstructorRate: number;
   editingSessionId: string | null;
@@ -47,7 +45,6 @@ export function CourseSessionsList({
   sessions,
   instructors,
   showAdminActions,
-  currentInstructorId,
   courseInstitutionRate,
   courseInstructorRate,
   editingSessionId,
@@ -116,24 +113,24 @@ export function CourseSessionsList({
                       <MobileCardField label="הערת תפעול: " value={session.cancellation_reason} />
                     ) : null}
                   </div>
-                  <SessionStatusBadge
-                    status={session.status}
-                    isDelayed={isSessionDelayed(
-                      session.session_date,
-                      session.start_time,
-                      session.status,
-                      session.actual_arrival_time,
-                    )}
+                  <SessionSimpleStatusSelect
+                    courseId={courseId}
+                    sessionId={session.id}
+                    currentStatus={session.status}
+                    mode={showAdminActions ? "admin" : "instructor"}
+                    sessionDate={session.session_date}
+                    startTime={session.start_time}
+                    className="mx-auto"
                   />
                   <CourseSessionOperations
                     courseId={courseId}
                     session={session}
                     sessionLabel={sessionLabel}
                     showAdminActions={showAdminActions}
-                    currentInstructorId={currentInstructorId}
                     isEditing={isEditing}
                     onEdit={onEdit}
                     variant="card"
+                    includeStatusSelect={false}
                   />
                 </MobileCardBody>
               )}
@@ -251,14 +248,14 @@ export function CourseSessionsList({
                   ) : null}
                   <td className={`${tdClass} text-center`}>
                     <div className={`${cellCenterWrapClass} flex justify-center`}>
-                      <SessionStatusBadge
-                        status={session.status}
-                        isDelayed={isSessionDelayed(
-                          session.session_date,
-                          session.start_time,
-                          session.status,
-                          session.actual_arrival_time,
-                        )}
+                      <SessionSimpleStatusSelect
+                        courseId={courseId}
+                        sessionId={session.id}
+                        currentStatus={session.status}
+                        mode={showAdminActions ? "admin" : "instructor"}
+                        sessionDate={session.session_date}
+                        startTime={session.start_time}
+                        compact
                       />
                     </div>
                   </td>
@@ -275,10 +272,10 @@ export function CourseSessionsList({
                       session={session}
                       sessionLabel={formatSessionDate(session.session_date)}
                       showAdminActions={showAdminActions}
-                      currentInstructorId={currentInstructorId}
                       isEditing={isEditing}
                       onEdit={onEdit}
                       variant="table"
+                      includeStatusSelect={false}
                     />
                   </td>
                 </tr>

@@ -1,36 +1,34 @@
 "use client";
 
-import { SessionsListAdminStatusSelect } from "@/components/sessions/sessions-list-admin-status-select";
-import { SessionStatusBadge } from "@/components/sessions/session-status-badge";
 import type { SessionStatus } from "@/components/sessions/constants";
+import { SessionSimpleStatusSelect } from "@/components/sessions/session-simple-status-select";
 
 type SessionListStatusControlProps = {
   courseId: string;
   sessionId: string;
   status: SessionStatus;
   showAdminActions: boolean;
+  sessionDate: string;
+  startTime: string;
 };
 
-/** סטטוס מפגש — select למנהל, תג למדריך (משותף לדסקטופ ומובייל). */
+/** סטטוס מפגש — אותו select למנהל ולמדריך (מתוכנן / בוצע / בוטל). */
 export function SessionListStatusControl({
   courseId,
   sessionId,
   status,
   showAdminActions,
+  sessionDate,
+  startTime,
 }: SessionListStatusControlProps) {
-  if (showAdminActions) {
-    return (
-      <SessionsListAdminStatusSelect
-        courseId={courseId}
-        sessionId={sessionId}
-        currentStatus={status}
-      />
-    );
-  }
-
   return (
-    <div className="flex justify-center">
-      <SessionStatusBadge status={status} />
-    </div>
+    <SessionSimpleStatusSelect
+      courseId={courseId}
+      sessionId={sessionId}
+      currentStatus={status}
+      mode={showAdminActions ? "admin" : "instructor"}
+      sessionDate={sessionDate}
+      startTime={startTime}
+    />
   );
 }

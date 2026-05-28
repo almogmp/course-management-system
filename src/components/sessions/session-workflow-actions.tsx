@@ -19,7 +19,6 @@ type SessionWorkflowActionsProps = {
   courseId: string;
   session: CourseSessionListItem;
   showAdminActions: boolean;
-  currentInstructorId: string | null;
 };
 
 function WorkflowMessage({ state }: { state: SessionWorkflowFormState }) {
