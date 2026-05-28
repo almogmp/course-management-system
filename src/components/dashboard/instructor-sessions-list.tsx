@@ -1,7 +1,7 @@
 import { SessionStatusBadge } from "@/components/sessions/session-status-badge";
 import {
   formatSessionDate,
-  formatSessionHours,
+  formatSessionHoursDisplay,
   formatSessionTimeRange,
 } from "@/components/sessions/format";
 import type { InstructorDashboardSession } from "@/components/dashboard/get-instructor-dashboard-data";
@@ -36,7 +36,7 @@ export function InstructorSessionsList({ sessions }: InstructorSessionsListProps
               </div>
               <p className="text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">שעות מדריך: </span>
-                {formatSessionHours(session.instructor_hours)}
+                {formatSessionHoursDisplay(session.instructor_hours)}
               </p>
               {session.notes ? (
                 <p className="text-sm text-muted-foreground">
@@ -96,7 +96,7 @@ export function InstructorSessionsList({ sessions }: InstructorSessionsListProps
                   <SessionStatusBadge status={session.status} />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatSessionHours(session.instructor_hours)}
+                  {formatSessionHoursDisplay(session.instructor_hours)}
                 </td>
                 <td className="max-w-xs px-4 py-3 text-muted-foreground">
                   {session.notes ?? "—"}

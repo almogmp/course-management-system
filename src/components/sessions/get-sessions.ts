@@ -1,5 +1,6 @@
 import type { SessionStatus } from "@/components/sessions/constants";
 import { getCurrentInstructorId } from "@/lib/auth/instructor";
+import { coerceSessionHours } from "@/lib/sessions/coerce-session-hours";
 import { resolveSessionInstructorDisplayName } from "@/lib/sessions/resolve-instructor-display-name";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
@@ -24,6 +25,7 @@ type AdminSessionQueryRow = Pick<
   | "start_time"
   | "end_time"
   | "status"
+  | "instructor_hours"
   | "substitute_instructor_id"
 > & {
   substitute_instructor: Pick<Database["public"]["Tables"]["instructors"]["Row"], "full_name"> | null;
@@ -57,7 +59,7 @@ async function getAdminSessionsList(): Promise<SessionListItem[]> {
       supabase
         .from("sessions")
         .select(
-          `id, session_date, start_time, end_time, status, substitute_instructor_id,
+          `id, session_date, start_time, end_time, status, instructor_hours, substitute_instructor_id,
            substitute_instructor:instructors!sessions_substitute_instructor_id_fkey(full_name),
            courses(
              id, name, lead_instructor_id,
@@ -94,7 +96,7 @@ async function getAdminSessionsList(): Promise<SessionListItem[]> {
         start_time: row.start_time,
         end_time: row.end_time,
         status: row.status as SessionStatus,
-        instructor_hours: 0,
+        instructor_hours: coerceSessionHours(row.instructor_hours),
         course_name: course.name,
         institution_name: course.institutions?.name ?? "—",
         instructor_name: resolveSessionInstructorDisplayName({
@@ -146,7 +148,7 @@ async function getInstructorSessionsList(): Promise<SessionListItem[]> {
     start_time: row.start_time,
     end_time: row.end_time,
     status: row.status,
-    instructor_hours: row.instructor_hours,
+    instructor_hours: coerceSessionHours(row.instructor_hours),
     course_name: row.course_name ?? "—",
     institution_name: row.institution_name ?? "—",
     instructor_name: selfName,

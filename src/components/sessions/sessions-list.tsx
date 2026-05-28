@@ -30,7 +30,7 @@ export function SessionsList({
   showInstitutionColumn = false,
   listReturnPath,
 }: SessionsListProps) {
-  const showInstructorHours = !showAdminActions;
+  const showInstructorHours = true;
   const showStatus = !showAdminActions;
 
   return (
@@ -44,6 +44,7 @@ export function SessionsList({
                 showInstitution={showInstitutionColumn}
                 linkCourse
                 showInstructorHours={showInstructorHours}
+                showInstructorName={showAdminActions}
                 showStatus={showStatus}
               />
               <SessionGlobalListActions
@@ -66,7 +67,7 @@ export function SessionsList({
               <th className={APP_TABLE_TH_CLASS}>קורס</th>
               {showAdminActions ? <th className={APP_TABLE_TH_CLASS}>מדריך</th> : null}
               {showInstitutionColumn ? <th className={APP_TABLE_TH_CLASS}>מוסד</th> : null}
-              {!showAdminActions ? <th className={APP_TABLE_TH_CLASS}>שעות מדריך</th> : null}
+              <th className={APP_TABLE_TH_CLASS}>שעות מדריך</th>
               {!showAdminActions ? <th className={APP_TABLE_TH_CLASS}>סטטוס</th> : null}
               <th className={APP_TABLE_TH_CLASS}>פעולות</th>
             </tr>
@@ -94,11 +95,9 @@ export function SessionsList({
                 {showInstitutionColumn ? (
                   <td className={APP_TABLE_TD_CLASS}>{session.institution_name}</td>
                 ) : null}
-                {!showAdminActions ? (
-                  <td className={APP_TABLE_TD_CLASS}>
-                    {formatSessionHoursDisplay(session.instructor_hours)}
-                  </td>
-                ) : null}
+                <td className={APP_TABLE_TD_CLASS}>
+                  {formatSessionHoursDisplay(session.instructor_hours)}
+                </td>
                 {!showAdminActions ? (
                   <td className={APP_TABLE_TD_CLASS}>{formatSessionStatusLabel(session.status)}</td>
                 ) : null}

@@ -103,10 +103,12 @@ export function CourseSessionsList({
                       label="שעות מדריך: "
                       value={formatSessionHoursDisplay(session.instructor_hours)}
                     />
-                    <MobileCardField
-                      label="שעות חברה: "
-                      value={formatSessionHoursDisplay(session.company_hours)}
-                    />
+                    {showAdminActions ? (
+                      <MobileCardField
+                        label="שעות חברה: "
+                        value={formatSessionHoursDisplay(session.company_hours)}
+                      />
+                    ) : null}
                     {session.admin_note ? (
                       <MobileCardField label="הערות: " value={session.admin_note} />
                     ) : null}
@@ -158,9 +160,11 @@ export function CourseSessionsList({
               <th scope="col" className={thClass}>
                 שעות מדריך
               </th>
-              <th scope="col" className={thClass}>
-                שעות חברה
-              </th>
+              {showAdminActions ? (
+                <th scope="col" className={thClass}>
+                  שעות חברה
+                </th>
+              ) : null}
               <th scope="col" className={thClass}>
                 סטטוס
               </th>
@@ -181,7 +185,7 @@ export function CourseSessionsList({
                 return (
                   <tr key={session.id} className="border-b border-border bg-primary/5">
                     <td
-                      colSpan={showAdminActions ? 8 : 7}
+                      colSpan={showAdminActions ? 8 : 6}
                       className="px-4 py-4 text-center align-middle"
                     >
                       <EditSessionForm
@@ -238,11 +242,13 @@ export function CourseSessionsList({
                       {formatSessionHoursDisplay(session.instructor_hours)}
                     </span>
                   </td>
-                  <td className={`${tdClass} text-center`}>
-                    <span className="text-center">
-                      {formatSessionHoursDisplay(session.company_hours)}
-                    </span>
-                  </td>
+                  {showAdminActions ? (
+                    <td className={`${tdClass} text-center`}>
+                      <span className="text-center">
+                        {formatSessionHoursDisplay(session.company_hours)}
+                      </span>
+                    </td>
+                  ) : null}
                   <td className={`${tdClass} text-center`}>
                     <div className={`${cellCenterWrapClass} flex justify-center`}>
                       <SessionStatusBadge

@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   formatSessionDate,
   formatSessionHoursDisplay,
+  formatSessionHoursRawDebug,
   formatSessionTimeRange,
 } from "@/components/sessions/format";
 import type { SessionListItem } from "@/components/sessions/get-sessions";
@@ -15,6 +16,7 @@ type SessionListFieldsProps = {
   showInstitution: boolean;
   linkCourse?: boolean;
   showInstructorHours?: boolean;
+  showInstructorName?: boolean;
   showStatus?: boolean;
 };
 
@@ -23,6 +25,7 @@ export function SessionListFields({
   showInstitution,
   linkCourse = true,
   showInstructorHours = false,
+  showInstructorName = false,
   showStatus = false,
 }: SessionListFieldsProps) {
   return (
@@ -41,19 +44,28 @@ export function SessionListFields({
       ) : (
         <MobileCardField value={session.course_name} />
       )}
-      {showInstitution && session.institution_name ? (
-        <MobileCardField label="מוסד: " value={session.institution_name} />
+      {showInstitution ? (
+        <MobileCardField label="מוסד: " value={session.institution_name || "—"} />
       ) : null}
       {showInstructorHours ? (
-        <MobileCardField
-          label="שעות מדריך: "
-          value={formatSessionHoursDisplay(session.instructor_hours)}
-        />
+        <>
+          <MobileCardField
+            label="שעות מדריך: "
+            value={formatSessionHoursDisplay(session.instructor_hours)}
+          />
+          {!showInstructorName ? (
+            <p className="text-xs text-muted-foreground">
+              ערך גולמי: {formatSessionHoursRawDebug(session.instructor_hours)}
+            </p>
+          ) : null}
+        </>
       ) : null}
       {showStatus ? (
         <MobileCardField label="סטטוס: " value={formatSessionStatusLabel(session.status)} />
       ) : null}
-      <MobileCardField label="מדריך: " value={session.instructor_name} />
+      {showInstructorName ? (
+        <MobileCardField label="מדריך: " value={session.instructor_name} />
+      ) : null}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   computeInstructorMonthlyWorkload,
   type InstructorWorkloadRow,
 } from "@/lib/dashboard/workload";
+import { coerceSessionHours } from "@/lib/sessions/coerce-session-hours";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 
@@ -28,6 +29,7 @@ type InstructorSessionRow = {
   status: SessionStatus;
   instructor_hours: number;
   course_name: string;
+  institution_name: string | null;
   cancellation_reason: string | null;
 };
 
@@ -57,7 +59,7 @@ async function fetchInstructorSessionsInRange(
   const { data, error } = await instructorClient
     .from("instructor_sessions")
     .select(
-      "id, session_date, start_time, end_time, status, instructor_hours, course_name, cancellation_reason",
+      "id, session_date, start_time, end_time, status, instructor_hours, course_name, institution_name, cancellation_reason",
     )
     .gte("session_date", startDate)
     .lte("session_date", endDate)
@@ -76,9 +78,9 @@ async function fetchInstructorSessionsInRange(
     start_time: row.start_time,
     end_time: row.end_time,
     status: row.status,
-    instructor_hours: row.instructor_hours,
+    instructor_hours: coerceSessionHours(row.instructor_hours),
     course_name: row.course_name ?? null,
-    institution_name: null,
+    institution_name: row.institution_name ?? null,
     notes: row.cancellation_reason,
   }));
 }

@@ -1,3 +1,5 @@
+import { coerceSessionHours } from "@/lib/sessions/coerce-session-hours";
+
 /** פורמט תאריך ושעה להצגה בעברית */
 export function formatSessionDate(sessionDate: string): string {
   return new Intl.DateTimeFormat("he-IL", {
@@ -24,12 +26,26 @@ export function formatSessionHours(hours: number): string {
 }
 
 /** שעות לטבלאות — תמיד ערך מוצג, ללא תא ריק */
-export function formatSessionHoursDisplay(hours: number | null | undefined): string {
-  if (hours === null || hours === undefined || Number.isNaN(hours)) {
-    return "—";
+export function formatSessionHoursDisplay(hours: number | null | undefined | unknown): string {
+  const normalized = coerceSessionHours(hours);
+  if (normalized === 0 && (hours === null || hours === undefined || hours === "")) {
+    return "0";
   }
 
-  return formatSessionHours(hours);
+  return formatSessionHours(normalized);
+}
+
+/** Debug-safe raw label for instructor hours (instructor UI only). */
+export function formatSessionHoursRawDebug(hours: unknown): string {
+  if (hours === null) {
+    return "null";
+  }
+
+  if (hours === undefined) {
+    return "undefined";
+  }
+
+  return String(hours);
 }
 
 /** TIME מ-Postgres → ערך ל-input type="time" */

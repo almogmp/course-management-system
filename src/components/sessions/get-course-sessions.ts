@@ -1,3 +1,4 @@
+import { coerceSessionHours } from "@/lib/sessions/coerce-session-hours";
 import { getEffectiveInstructorId } from "@/lib/sessions/instructor-assignment";
 import { resolveSessionInstructorDisplayName } from "@/lib/sessions/resolve-instructor-display-name";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -154,7 +155,7 @@ export async function getCourseSessionsPageData(
       session_date: row.session_date,
       start_time: row.start_time,
       end_time: row.end_time,
-      instructor_hours: row.instructor_hours,
+      instructor_hours: coerceSessionHours(row.instructor_hours),
       company_hours: 0,
       status: row.status,
       admin_note: null,

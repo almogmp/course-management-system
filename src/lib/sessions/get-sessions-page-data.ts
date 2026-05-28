@@ -13,6 +13,7 @@ import {
   type SessionSummarySourceRow,
   type SessionsMonthSummary,
 } from "@/lib/sessions/compute-month-summary";
+import { coerceSessionHours } from "@/lib/sessions/coerce-session-hours";
 import { resolveSessionInstructorDisplayName } from "@/lib/sessions/resolve-instructor-display-name";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
@@ -111,9 +112,11 @@ async function getAdminSessionsForMonth(
 
     const course = row.courses;
 
+    const instructorHours = coerceSessionHours(row.instructor_hours);
+
     summaryRows.push({
       status: row.status as SessionStatus,
-      instructor_hours: row.instructor_hours,
+      instructor_hours: instructorHours,
       company_hours: row.company_hours,
       course: {
         company_hourly_rate: course.company_hourly_rate,
@@ -132,7 +135,7 @@ async function getAdminSessionsForMonth(
       start_time: row.start_time,
       end_time: row.end_time,
       status: row.status as SessionStatus,
-      instructor_hours: row.instructor_hours,
+      instructor_hours: instructorHours,
       course_name: course.name,
       institution_name: course.institutions?.name ?? "—",
       instructor_name: resolveSessionInstructorDisplayName({
@@ -188,9 +191,11 @@ async function getInstructorSessionsForMonth(
   const summaryRows: SessionSummarySourceRow[] = [];
 
   for (const row of (sessionRows ?? []) as InstructorSessionQueryRow[]) {
+    const instructorHours = coerceSessionHours(row.instructor_hours);
+
     summaryRows.push({
       status: row.status,
-      instructor_hours: row.instructor_hours,
+      instructor_hours: instructorHours,
       company_hours: 0,
       course: { company_hourly_rate: 0, instructor_hourly_wage: 0 },
       session: { institution_hourly_rate: null, instructor_hourly_rate: null },
@@ -203,7 +208,7 @@ async function getInstructorSessionsForMonth(
       start_time: row.start_time,
       end_time: row.end_time,
       status: row.status,
-      instructor_hours: row.instructor_hours,
+      instructor_hours: instructorHours,
       course_name: row.course_name ?? "—",
       institution_name: row.institution_name ?? "—",
       instructor_name: selfName,
@@ -214,18 +219,18 @@ async function getInstructorSessionsForMonth(
 }
 
 export async function getSessionsPageData(
-  isAdmin: boolean,
+  showAdminActions: boolean,
   monthQuery?: string,
 ): Promise<SessionsPageData> {
   const monthView = parseMonthParam(monthQuery);
   const { startDate, endDate } = getMonthBounds(monthView);
 
-  const { sessions, summaryRows } = isAdmin
+  const { sessions, summaryRows } = showAdminActions
     ? await getAdminSessionsForMonth(startDate, endDate)
     : await getInstructorSessionsForMonth(startDate, endDate);
 
   const summary = computeSessionsMonthSummary(summaryRows, {
-    includeFinancials: isAdmin,
+    includeFinancials: showAdminActions,
   });
 
   return {
@@ -234,6 +239,6 @@ export async function getSessionsPageData(
     monthView,
     monthParam: formatMonthParam(monthView),
     monthLabel: formatMonthLabel(monthView),
-    showAdminActions: isAdmin,
+    showAdminActions,
   };
 }
