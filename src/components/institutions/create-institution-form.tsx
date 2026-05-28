@@ -102,6 +102,47 @@ export function CreateInstitutionForm({ suppliers, errorMessage }: CreateInstitu
           <textarea id="institution-notes" name="notes" rows={3} className={inputClassName} />
         </div>
 
+        <div className="rounded-lg border border-border bg-muted/20 p-4">
+          <h3 className="mb-3 text-sm font-semibold text-foreground">פרטי רכז (אופציונלי)</h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-2">
+              <label htmlFor="institution-coordinator-name" className="block text-sm font-medium text-foreground">
+                שם רכז
+              </label>
+              <input
+                id="institution-coordinator-name"
+                name="coordinator_full_name"
+                type="text"
+                className={inputClassName}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="institution-coordinator-phone" className="block text-sm font-medium text-foreground">
+                טלפון רכז
+              </label>
+              <input
+                id="institution-coordinator-phone"
+                name="coordinator_phone"
+                type="tel"
+                dir="ltr"
+                className={inputClassName}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="institution-coordinator-email" className="block text-sm font-medium text-foreground">
+                מייל רכז אופציונלי
+              </label>
+              <input
+                id="institution-coordinator-email"
+                name="coordinator_email"
+                type="email"
+                dir="ltr"
+                className={inputClassName}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button type="submit" className="min-h-11 w-full sm:w-auto">
             שמירת מוסד

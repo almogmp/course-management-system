@@ -45,7 +45,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
         <SessionsList
           sessions={pageData.sessions}
           showAdminActions={pageData.showAdminActions}
-          showInstitutionColumn={pageData.showAdminActions}
+          showInstitutionColumn
           listReturnPath={buildSessionsPageUrl(pageData.monthView)}
         />
       )}

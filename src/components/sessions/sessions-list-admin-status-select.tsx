@@ -6,11 +6,10 @@ import { useRef, useState } from "react";
 import { adminQuickStatusAction } from "@/app/(app)/courses/[courseId]/sessions/attendance-actions";
 import {
   SESSIONS_LIST_ADMIN_STATUS_OPTIONS,
-  sessionsListSelectValue,
-  sessionsListToDbStatus,
   type SessionsListAdminStatusValue,
 } from "@/components/sessions/constants";
 import type { SessionStatus } from "@/components/sessions/constants";
+import { SESSION_STATUS_LABELS } from "@/components/sessions/constants";
 import { SESSION_ACTION_SUCCESS } from "@/lib/sessions/action-messages";
 
 type SessionsListAdminStatusSelectProps = {
@@ -28,12 +27,11 @@ export function SessionsListAdminStatusSelect({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const actionLock = useRef(false);
-  const selectValue = sessionsListSelectValue(currentStatus);
 
   async function handleChange(nextValue: SessionsListAdminStatusValue) {
-    const nextStatus = sessionsListToDbStatus(nextValue);
+    const nextStatus = nextValue;
 
-    if (nextValue === selectValue || actionLock.current) {
+    if (nextStatus === currentStatus || actionLock.current) {
       return;
     }
 
@@ -59,13 +57,19 @@ export function SessionsListAdminStatusSelect({
       <label className="sr-only" htmlFor={`sessions-list-status-${sessionId}`}>
         שינוי סטטוס
       </label>
+      <p className="text-center text-[11px] text-muted-foreground">
+        סטטוס נוכחי: {SESSION_STATUS_LABELS[currentStatus] ?? currentStatus}
+      </p>
       <select
         id={`sessions-list-status-${sessionId}`}
-        value={selectValue}
+        value=""
         disabled={pending}
         onChange={(event) => handleChange(event.target.value as SessionsListAdminStatusValue)}
         className="min-h-9 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-center text-sm disabled:opacity-60"
       >
+        <option value="" disabled>
+          שינוי סטטוס…
+        </option>
         {SESSIONS_LIST_ADMIN_STATUS_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

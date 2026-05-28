@@ -2,9 +2,11 @@ import Link from "next/link";
 
 import {
   formatSessionDate,
+  formatSessionHoursDisplay,
   formatSessionTimeRange,
 } from "@/components/sessions/format";
 import type { SessionListItem } from "@/components/sessions/get-sessions";
+import { formatSessionStatusLabel } from "@/lib/admin-reports/filters";
 import { SessionGlobalListActions } from "@/components/sessions/session-global-list-actions";
 import { SessionListFields } from "@/components/sessions/session-list-fields";
 import { MobileCard, MobileCardBody } from "@/components/ui/mobile-card";
@@ -28,6 +30,9 @@ export function SessionsList({
   showInstitutionColumn = false,
   listReturnPath,
 }: SessionsListProps) {
+  const showInstructorHours = !showAdminActions;
+  const showStatus = !showAdminActions;
+
   return (
     <>
       <ul className={MOBILE_CARD_LIST_CLASS}>
@@ -38,6 +43,8 @@ export function SessionsList({
                 session={session}
                 showInstitution={showInstitutionColumn}
                 linkCourse
+                showInstructorHours={showInstructorHours}
+                showStatus={showStatus}
               />
               <SessionGlobalListActions
                 session={session}
@@ -57,8 +64,10 @@ export function SessionsList({
               <th className={APP_TABLE_TH_CLASS}>תאריך</th>
               <th className={APP_TABLE_TH_CLASS}>שעות</th>
               <th className={APP_TABLE_TH_CLASS}>קורס</th>
-              <th className={APP_TABLE_TH_CLASS}>מדריך</th>
+              {showAdminActions ? <th className={APP_TABLE_TH_CLASS}>מדריך</th> : null}
               {showInstitutionColumn ? <th className={APP_TABLE_TH_CLASS}>מוסד</th> : null}
+              {!showAdminActions ? <th className={APP_TABLE_TH_CLASS}>שעות מדריך</th> : null}
+              {!showAdminActions ? <th className={APP_TABLE_TH_CLASS}>סטטוס</th> : null}
               <th className={APP_TABLE_TH_CLASS}>פעולות</th>
             </tr>
           </thead>
@@ -79,9 +88,19 @@ export function SessionsList({
                     {session.course_name}
                   </Link>
                 </td>
-                <td className={APP_TABLE_TD_CLASS}>{session.instructor_name}</td>
+                {showAdminActions ? (
+                  <td className={APP_TABLE_TD_CLASS}>{session.instructor_name}</td>
+                ) : null}
                 {showInstitutionColumn ? (
                   <td className={APP_TABLE_TD_CLASS}>{session.institution_name}</td>
+                ) : null}
+                {!showAdminActions ? (
+                  <td className={APP_TABLE_TD_CLASS}>
+                    {formatSessionHoursDisplay(session.instructor_hours)}
+                  </td>
+                ) : null}
+                {!showAdminActions ? (
+                  <td className={APP_TABLE_TD_CLASS}>{formatSessionStatusLabel(session.status)}</td>
                 ) : null}
                 <td className={APP_TABLE_TD_CLASS}>
                   <SessionGlobalListActions

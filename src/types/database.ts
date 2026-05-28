@@ -250,6 +250,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      expenses: {
+        Row: {
+          id: string;
+          expense_date: string;
+          category: string;
+          description: string;
+          amount: number;
+          paid_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          expense_date: string;
+          category: string;
+          description: string;
+          amount: number;
+          paid_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          expense_date?: string;
+          category?: string;
+          description?: string;
+          amount?: number;
+          paid_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       session_series: {
         Row: {
           id: string;

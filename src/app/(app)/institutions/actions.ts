@@ -9,6 +9,7 @@ import type { Database } from "@/types/database";
 
 type InstitutionInsert = Database["public"]["Tables"]["institutions"]["Insert"];
 type SupplierInsert = Database["public"]["Tables"]["primary_suppliers"]["Insert"];
+type CoordinatorInsert = Database["public"]["Tables"]["institution_coordinators"]["Insert"];
 
 const INSTITUTIONS_PATH = "/institutions";
 const LEGACY_COORDINATOR = "—";
@@ -19,6 +20,9 @@ export async function createInstitutionAction(formData: FormData): Promise<void>
   const name = String(formData.get("name") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim();
+  const coordinatorFullName = String(formData.get("coordinator_full_name") ?? "").trim();
+  const coordinatorPhone = String(formData.get("coordinator_phone") ?? "").trim();
+  const coordinatorEmail = String(formData.get("coordinator_email") ?? "").trim();
   const isOwnSupplier = formData.get("is_own_supplier") === "1";
   let primarySupplierId = String(formData.get("primary_supplier_id") ?? "").trim();
 
@@ -31,6 +35,12 @@ export async function createInstitutionAction(formData: FormData): Promise<void>
   if (!isOwnSupplier && !primarySupplierId) {
     redirect(
       `${INSTITUTIONS_PATH}?create=1&error=${encodeURIComponent("יש לבחור ספק או לסמן שהמוסד הוא הספק.")}`,
+    );
+  }
+
+  if (coordinatorFullName && !coordinatorPhone) {
+    redirect(
+      `${INSTITUTIONS_PATH}?create=1&error=${encodeURIComponent("אם מזינים שם רכז יש להזין גם טלפון רכז.")}`,
     );
   }
 
@@ -73,10 +83,32 @@ export async function createInstitutionAction(formData: FormData): Promise<void>
     is_active: true,
   };
 
-  const { error } = await supabase.from("institutions").insert(institutionPayload);
+  const { data: institution, error } = await supabase
+    .from("institutions")
+    .insert(institutionPayload)
+    .select("id")
+    .single();
 
   if (error) {
     redirect(`${INSTITUTIONS_PATH}?create=1&error=${encodeURIComponent(error.message)}`);
+  }
+
+  if (institution && coordinatorFullName) {
+    const coordinatorPayload: CoordinatorInsert = {
+      institution_id: institution.id,
+      full_name: coordinatorFullName,
+      phone: coordinatorPhone || null,
+      email: coordinatorEmail || null,
+      is_active: true,
+    };
+
+    const { error: coordinatorError } = await supabase
+      .from("institution_coordinators")
+      .insert(coordinatorPayload);
+
+    if (coordinatorError) {
+      redirect(`${INSTITUTIONS_PATH}?create=1&error=${encodeURIComponent(coordinatorError.message)}`);
+    }
   }
 
   revalidatePath(INSTITUTIONS_PATH);

@@ -37,8 +37,26 @@ export function InstitutionsList({
                 <div className={MOBILE_CARD_TEXT_BLOCK_CLASS}>
                   <MobileCardField value={institution.name} emphasize />
                   <MobileCardField value={institution.city} />
-                  <MobileCardField label="רכז: " value={institution.coordinator} />
-                  <MobileCardField value={institution.phone} dir="ltr" />
+                  <MobileCardField
+                    label="רכזים: "
+                    value={
+                      institution.coordinators.filter((c) => c.is_active).length > 0
+                        ? institution.coordinators
+                            .filter((c) => c.is_active)
+                            .map((c) => c.full_name)
+                            .join(" · ")
+                        : institution.coordinator
+                    }
+                  />
+                  <MobileCardField
+                    label="טלפון רכז: "
+                    value={
+                      institution.coordinators.find((c) => c.is_active && c.phone)?.phone ??
+                      institution.phone ??
+                      "—"
+                    }
+                    dir="ltr"
+                  />
                   {institution.supplier_name ? (
                     <MobileCardField label="ספק: " value={institution.supplier_name} />
                   ) : null}
@@ -68,10 +86,10 @@ export function InstitutionsList({
                 עיר
               </th>
               <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
-                רכז
+                רכזים
               </th>
               <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
-                טלפון
+                טלפון רכז
               </th>
               <th scope="col" className="px-4 py-3 font-medium text-muted-foreground">
                 ספק
@@ -88,9 +106,18 @@ export function InstitutionsList({
               <tr key={institution.id} className="border-b border-border last:border-b-0">
                 <td className="px-4 py-3 font-medium text-foreground">{institution.name}</td>
                 <td className="px-4 py-3 text-muted-foreground">{institution.city}</td>
-                <td className="px-4 py-3 text-muted-foreground">{institution.coordinator}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {institution.coordinators.filter((c) => c.is_active).length > 0
+                    ? institution.coordinators
+                        .filter((c) => c.is_active)
+                        .map((c) => c.full_name)
+                        .join(" · ")
+                    : institution.coordinator}
+                </td>
                 <td className="px-4 py-3 text-muted-foreground" dir="ltr">
-                  {institution.phone}
+                  {institution.coordinators.find((c) => c.is_active && c.phone)?.phone ??
+                    institution.phone ??
+                    "—"}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {institution.supplier_name ?? "—"}

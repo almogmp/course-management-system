@@ -1,4 +1,5 @@
 import { CreateCourseForm } from "@/components/courses/create-course-form";
+import { CoursesFilters } from "@/components/courses/courses-filters";
 import { CoursesEmptyState } from "@/components/courses/courses-empty-state";
 import { CoursesList } from "@/components/courses/courses-list";
 import { getCoursesForPage } from "@/components/courses/get-courses";
@@ -7,6 +8,7 @@ import { Container } from "@/components/ui/container";
 import { resolveAdminDeleteFlashMessage } from "@/lib/admin-delete/flash-message";
 import { getCourseFormOptions } from "@/lib/courses/get-course-form-options";
 import { isAdminEmail } from "@/config/admin";
+import { buildSchoolYearOptions, getCurrentSchoolYearStartYear } from "@/lib/school-year";
 import { requireAuth } from "@/lib/auth/guards";
 import { getAuthSnapshot } from "@/lib/auth/session";
 
@@ -16,6 +18,10 @@ type CoursesPageProps = {
     error?: string;
     success?: string;
     message?: string;
+    instructor?: string;
+    institution?: string;
+    coordinator?: string;
+    schoolYear?: string;
   };
 };
 
@@ -27,8 +33,19 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
   const showCreateForm = searchParams?.create === "1";
   const { successMessage: deleteSuccessMessage, errorMessage } =
     resolveAdminDeleteFlashMessage(searchParams);
-  const courses = await getCoursesForPage(isAdmin);
-  const courseFormOptions = showCreateForm ? await getCourseFormOptions() : null;
+
+  const currentSchoolYearStart = getCurrentSchoolYearStartYear();
+  const selectedSchoolYearStart = Number(searchParams?.schoolYear ?? "") || currentSchoolYearStart;
+  const schoolYearOptions = buildSchoolYearOptions(currentSchoolYearStart, 3);
+
+  const courses = await getCoursesForPage(isAdmin, {
+    instructorId: searchParams?.instructor?.trim() || undefined,
+    institutionId: searchParams?.institution?.trim() || undefined,
+    coordinatorId: searchParams?.coordinator?.trim() || undefined,
+    schoolYearStart: selectedSchoolYearStart,
+  });
+
+  const courseFormOptions = showAdminLinks ? await getCourseFormOptions() : null;
 
   return (
     <Container as="main" className="flex flex-1 flex-col gap-6 py-8">
@@ -77,6 +94,19 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
         >
           {errorMessage}
         </p>
+      ) : null}
+
+      {showAdminLinks && courseFormOptions && !showCreateForm ? (
+        <CoursesFilters
+          options={courseFormOptions}
+          schoolYearOptions={schoolYearOptions}
+          filters={{
+            instructor: searchParams?.instructor?.trim() || undefined,
+            institution: searchParams?.institution?.trim() || undefined,
+            coordinator: searchParams?.coordinator?.trim() || undefined,
+            schoolYearStart: selectedSchoolYearStart,
+          }}
+        />
       ) : null}
 
       {showCreateForm && courseFormOptions ? (

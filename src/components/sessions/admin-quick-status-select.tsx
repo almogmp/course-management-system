@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { adminQuickStatusAction } from "@/app/(app)/courses/[courseId]/sessions/attendance-actions";
 import {
   ADMIN_STATUS_OPTIONS,
+  SESSION_STATUS_LABELS,
   type SessionStatus,
 } from "@/components/sessions/constants";
 import { SESSION_ACTION_SUCCESS } from "@/lib/sessions/action-messages";
@@ -58,9 +59,12 @@ export function AdminQuickStatusSelect({
       <label className="sr-only" htmlFor={`admin-status-${sessionId}`}>
         שינוי סטטוס מהיר
       </label>
+      <p className="text-[11px] text-muted-foreground">
+        סטטוס נוכחי: {SESSION_STATUS_LABELS[currentStatus] ?? currentStatus}
+      </p>
       <select
         id={`admin-status-${sessionId}`}
-        value={currentStatus}
+        value=""
         disabled={pending}
         onChange={(event) => handleChange(event.target.value as SessionStatus)}
         className={
@@ -69,6 +73,9 @@ export function AdminQuickStatusSelect({
             : "min-h-9 w-full min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 text-sm disabled:opacity-60"
         }
       >
+        <option value="" disabled>
+          שינוי סטטוס…
+        </option>
         {ADMIN_STATUS_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

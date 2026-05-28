@@ -6,6 +6,13 @@ export type InstitutionListItem = Pick<
   "id" | "name" | "city" | "coordinator" | "phone"
 > & {
   supplier_name: string | null;
+  coordinators: Array<{
+    id: string;
+    full_name: string;
+    phone: string | null;
+    email: string | null;
+    is_active: boolean;
+  }>;
 };
 
 type InstitutionQueryRow = Pick<
@@ -13,6 +20,12 @@ type InstitutionQueryRow = Pick<
   "id" | "name" | "city" | "coordinator" | "phone"
 > & {
   primary_suppliers: Pick<Database["public"]["Tables"]["primary_suppliers"]["Row"], "name"> | null;
+  institution_coordinators?: Array<
+    Pick<
+      Database["public"]["Tables"]["institution_coordinators"]["Row"],
+      "id" | "full_name" | "phone" | "email" | "is_active"
+    >
+  > | null;
 };
 
 export async function getInstitutions(options?: {
@@ -22,7 +35,9 @@ export async function getInstitutions(options?: {
 
   let query = supabase
     .from("institutions")
-    .select("id, name, city, coordinator, phone, primary_suppliers(name)")
+    .select(
+      "id, name, city, coordinator, phone, primary_suppliers(name), institution_coordinators(id, full_name, phone, email, is_active)",
+    )
     .order("name", { ascending: true });
 
   if (!options?.includeInactive) {
@@ -44,5 +59,6 @@ export async function getInstitutions(options?: {
     coordinator: row.coordinator,
     phone: row.phone,
     supplier_name: row.primary_suppliers?.name ?? null,
+    coordinators: row.institution_coordinators ?? [],
   }));
 }

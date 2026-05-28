@@ -49,6 +49,7 @@ type InstructorSessionQueryRow = {
   status: SessionStatus;
   instructor_hours: number;
   course_name: string | null;
+  institution_name: string | null;
   substitute_instructor_id: string | null;
 };
 
@@ -131,6 +132,7 @@ async function getAdminSessionsForMonth(
       start_time: row.start_time,
       end_time: row.end_time,
       status: row.status as SessionStatus,
+      instructor_hours: row.instructor_hours,
       course_name: course.name,
       institution_name: course.institutions?.name ?? "—",
       instructor_name: resolveSessionInstructorDisplayName({
@@ -158,7 +160,7 @@ async function getInstructorSessionsForMonth(
   const { data: sessionRows, error } = await instructorClient
     .from("instructor_sessions")
     .select(
-      "id, course_id, session_date, start_time, end_time, status, instructor_hours, course_name, substitute_instructor_id",
+      "id, course_id, session_date, start_time, end_time, status, instructor_hours, course_name, institution_name, substitute_instructor_id",
     )
     .gte("session_date", startDate)
     .lte("session_date", endDate)
@@ -201,8 +203,9 @@ async function getInstructorSessionsForMonth(
       start_time: row.start_time,
       end_time: row.end_time,
       status: row.status,
+      instructor_hours: row.instructor_hours,
       course_name: row.course_name ?? "—",
-      institution_name: "",
+      institution_name: row.institution_name ?? "—",
       instructor_name: selfName,
     });
   }

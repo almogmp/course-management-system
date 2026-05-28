@@ -11,6 +11,7 @@ export type SessionListItem = {
   start_time: string;
   end_time: string;
   status: SessionStatus;
+  instructor_hours: number;
   course_name: string;
   institution_name: string;
   instructor_name: string;
@@ -42,7 +43,9 @@ type InstructorSessionQueryRow = {
   start_time: string;
   end_time: string;
   status: SessionStatus;
+  instructor_hours: number;
   course_name: string;
+  institution_name: string | null;
   substitute_instructor_id: string | null;
 };
 
@@ -91,6 +94,7 @@ async function getAdminSessionsList(): Promise<SessionListItem[]> {
         start_time: row.start_time,
         end_time: row.end_time,
         status: row.status as SessionStatus,
+        instructor_hours: 0,
         course_name: course.name,
         institution_name: course.institutions?.name ?? "—",
         instructor_name: resolveSessionInstructorDisplayName({
@@ -113,7 +117,7 @@ async function getInstructorSessionsList(): Promise<SessionListItem[]> {
   const { data: sessionRows, error } = await instructorClient
     .from("instructor_sessions")
     .select(
-      "id, course_id, session_date, start_time, end_time, status, course_name, substitute_instructor_id",
+      "id, course_id, session_date, start_time, end_time, status, instructor_hours, course_name, institution_name, substitute_instructor_id",
     )
     .order("session_date", { ascending: false })
     .order("start_time", { ascending: false });
@@ -142,8 +146,9 @@ async function getInstructorSessionsList(): Promise<SessionListItem[]> {
     start_time: row.start_time,
     end_time: row.end_time,
     status: row.status,
+    instructor_hours: row.instructor_hours,
     course_name: row.course_name ?? "—",
-    institution_name: "—",
+    institution_name: row.institution_name ?? "—",
     instructor_name: selfName,
   }));
 }
