@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth/guards";
 import { parseCombinedCourseWithSessionsForm } from "@/lib/courses/parse-combined-course-bulk-form";
 import { resolveCoordinatorForInstitution } from "@/lib/courses/resolve-coordinator";
 import { instructorExists } from "@/lib/instructors/get-instructors-for-select";
+import { parseSchoolYearFromForm } from "@/lib/school-year-form";
 import {
   previewBulkSessionsForNewCourse,
   runBulkSessionCreateForCourse,
@@ -14,8 +15,6 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
 type CourseInsert = Database["public"]["Tables"]["courses"]["Insert"];
-
-const LEGACY_SCHOOL_YEAR = "—";
 
 export type CombinedCourseSessionsPreview = {
   totalCandidates: number;
@@ -115,7 +114,7 @@ export async function createCombinedCourseWithSessionsAction(
     primary_supplier_id: parsed.data.course.primarySupplierId,
     lead_instructor_id: parsed.data.course.leadInstructorId,
     status: "active",
-    school_year: LEGACY_SCHOOL_YEAR,
+    school_year: parseSchoolYearFromForm(formData),
     instructor_hourly_wage: parsed.data.course.instructorHourlyRate,
     company_hourly_rate: parsed.data.course.institutionHourlyRate,
     instructor_hours: 0,

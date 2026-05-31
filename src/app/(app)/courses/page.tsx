@@ -110,7 +110,12 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
       ) : null}
 
       {showCreateForm && courseFormOptions ? (
-        <CreateCourseForm options={courseFormOptions} errorMessage={errorMessage} />
+        <CreateCourseForm
+          options={courseFormOptions}
+          schoolYearOptions={schoolYearOptions}
+          defaultSchoolYearStart={currentSchoolYearStart}
+          errorMessage={errorMessage}
+        />
       ) : null}
 
       {courses.length === 0 ? (

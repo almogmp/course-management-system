@@ -4,31 +4,60 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { createCourseAction } from "@/app/(app)/courses/actions";
-import { CourseRateFields } from "@/components/courses/course-rate-fields";
+import { CombinedCourseRateFields } from "@/components/admin/combined-course-rate-fields";
 import { Button } from "@/components/ui/button";
 import type { CourseFormOptions } from "@/lib/courses/get-course-form-options";
+import { filterInstitutionsBySupplier } from "@/lib/courses/filter-institutions-by-supplier";
+import type { SchoolYear } from "@/lib/school-year";
 
 type CreateCourseFormProps = {
   options: CourseFormOptions;
+  schoolYearOptions: SchoolYear[];
+  defaultSchoolYearStart: number;
   errorMessage?: string | null;
 };
 
 const inputClassName =
   "min-h-11 w-full rounded-lg border border-border bg-background px-4 py-3 text-base text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
-export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProps) {
-  const [institutionId, setInstitutionId] = useState("");
+export function CreateCourseForm({
+  options,
+  schoolYearOptions,
+  defaultSchoolYearStart,
+  errorMessage,
+}: CreateCourseFormProps) {
   const [supplierId, setSupplierId] = useState("");
+  const [institutionId, setInstitutionId] = useState("");
 
-  const selectedInstitution = useMemo(
-    () => options.institutions.find((row) => row.id === institutionId),
-    [options.institutions, institutionId],
+  const filteredInstitutions = useMemo(
+    () => filterInstitutionsBySupplier(options.institutions, supplierId),
+    [options.institutions, supplierId],
   );
 
   const coordinatorsForInstitution = useMemo(
     () => options.coordinators.filter((row) => row.institution_id === institutionId),
     [options.coordinators, institutionId],
   );
+
+  function handleSupplierChange(nextSupplierId: string) {
+    setSupplierId(nextSupplierId);
+    const stillValid = filterInstitutionsBySupplier(options.institutions, nextSupplierId).some(
+      (row) => row.id === institutionId,
+    );
+
+    if (!stillValid) {
+      setInstitutionId("");
+    }
+  }
+
+  function handleInstitutionChange(nextInstitutionId: string) {
+    setInstitutionId(nextInstitutionId);
+    const institution = options.institutions.find((row) => row.id === nextInstitutionId);
+
+    if (institution?.primary_supplier_id && !institution.is_own_supplier) {
+      setSupplierId(institution.primary_supplier_id);
+    }
+  }
 
   return (
     <section
@@ -41,7 +70,7 @@ export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProp
         </h2>
         <Link
           href="/courses"
-          className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          className="text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
         >
           ביטול
         </Link>
@@ -65,6 +94,27 @@ export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProp
         </div>
 
         <div className="space-y-2">
+          <label htmlFor="course-supplier" className="block text-sm font-medium text-foreground">
+            ספק
+          </label>
+          <select
+            id="course-supplier"
+            name="primary_supplier_id"
+            required
+            value={supplierId}
+            onChange={(event) => handleSupplierChange(event.target.value)}
+            className={inputClassName}
+          >
+            <option value="">בחרו ספק</option>
+            {options.suppliers.map((supplier) => (
+              <option key={supplier.id} value={supplier.id}>
+                {supplier.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
           <label htmlFor="course-institution" className="block text-sm font-medium text-foreground">
             מוסד
           </label>
@@ -73,20 +123,12 @@ export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProp
             name="institution_id"
             required
             value={institutionId}
-            onChange={(event) => {
-              const nextId = event.target.value;
-              setInstitutionId(nextId);
-              const institution = options.institutions.find((row) => row.id === nextId);
-              if (institution?.primary_supplier_id && !institution.is_own_supplier) {
-                setSupplierId(institution.primary_supplier_id);
-              } else {
-                setSupplierId("");
-              }
-            }}
+            disabled={!supplierId}
+            onChange={(event) => handleInstitutionChange(event.target.value)}
             className={inputClassName}
           >
-            <option value="">בחרו מוסד</option>
-            {options.institutions.map((institution) => (
+            <option value="">{supplierId ? "בחרו מוסד" : "בחרו ספק תחילה"}</option>
+            {filteredInstitutions.map((institution) => (
               <option key={institution.id} value={institution.id}>
                 {institution.name}
               </option>
@@ -96,17 +138,16 @@ export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProp
 
         <div className="space-y-2">
           <label htmlFor="course-coordinator" className="block text-sm font-medium text-foreground">
-            רכז
+            רכז (אופציונלי)
           </label>
           <select
             id="course-coordinator"
             name="coordinator_id"
-            required
             disabled={!institutionId}
             className={inputClassName}
           >
             <option value="">
-              {institutionId ? "בחרו רכז מהמוסד" : "בחרו מוסד תחילה"}
+              {institutionId ? "ברירת מחדל — רכז ראשון במוסד" : "בחרו מוסד תחילה"}
             </option>
             {coordinatorsForInstitution.map((coordinator) => (
               <option key={coordinator.id} value={coordinator.id}>
@@ -116,49 +157,40 @@ export function CreateCourseForm({ options, errorMessage }: CreateCourseFormProp
           </select>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <label htmlFor="course-supplier" className="block text-sm font-medium text-foreground">
-              ספק ראשי
-            </label>
-            <select
-              id="course-supplier"
-              name="primary_supplier_id"
-              required
-              value={supplierId}
-              onChange={(event) => setSupplierId(event.target.value)}
-              className={inputClassName}
-            >
-              <option value="">בחרו ספק</option>
-              {options.suppliers.map((supplier) => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.name}
-                </option>
-              ))}
-            </select>
-            {selectedInstitution?.is_own_supplier ? (
-              <p className="text-xs text-muted-foreground">
-                המוסד מסומן כספק עצמי — בחרו ספק לקורס או צרו ספק תואם.
-              </p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="course-instructor" className="block text-sm font-medium text-foreground">
-              מדריך מוביל
-            </label>
-            <select id="course-instructor" name="lead_instructor_id" required className={inputClassName}>
-              <option value="">בחרו מדריך</option>
-              {options.instructors.map((instructor) => (
-                <option key={instructor.id} value={instructor.id}>
-                  {instructor.full_name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="space-y-2">
+          <label htmlFor="course-instructor" className="block text-sm font-medium text-foreground">
+            מדריך
+          </label>
+          <select id="course-instructor" name="lead_instructor_id" required className={inputClassName}>
+            <option value="">בחרו מדריך</option>
+            {options.instructors.map((instructor) => (
+              <option key={instructor.id} value={instructor.id}>
+                {instructor.full_name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <CourseRateFields />
+        <div className="space-y-2">
+          <label htmlFor="course-school-year" className="block text-sm font-medium text-foreground">
+            שנת לימודים
+          </label>
+          <select
+            id="course-school-year"
+            name="school_year"
+            required
+            defaultValue={String(defaultSchoolYearStart)}
+            className={inputClassName}
+          >
+            {schoolYearOptions.map((year) => (
+              <option key={year.label} value={String(year.startYear)}>
+                {year.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <CombinedCourseRateFields />
 
         <div className="space-y-2">
           <label htmlFor="target-hours" className="block text-sm font-medium text-foreground">

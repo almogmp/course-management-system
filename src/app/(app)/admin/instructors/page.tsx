@@ -1,9 +1,12 @@
 import Link from "next/link";
 
+import { AdminManagersPanel } from "@/components/admin/admin-managers-panel";
 import { AdminInstructorsManagement } from "@/components/admin/admin-instructors-management";
 import { Container } from "@/components/ui/container";
+import { isSuperAdminEmail } from "@/config/admin";
 import { requireAdmin } from "@/lib/auth/guards";
 import { resolveAdminDeleteFlashMessage } from "@/lib/admin-delete/flash-message";
+import { getAdminManagers } from "@/lib/admin/get-admin-managers";
 import { getAdminInstructors } from "@/lib/instructors/get-admin-instructors";
 
 type AdminInstructorsPageProps = {
@@ -17,15 +20,21 @@ const successMessages: Record<string, string> = {
   created: "המדריך נוסף בהצלחה.",
   updated: "פרטי המדריך עודכנו.",
   updated_with_password: "פרטי המדריך והסיסמה עודכנו.",
+  password_updated: "הסיסמה עודכנה בהצלחה",
   activated: "המדריך הופעל במערכת.",
   deactivated: "המדריך הושבת במערכת.",
   deleted: "המדריך נמחק בהצלחה",
+  admin_password_updated: "סיסמת המנהל עודכנה בהצלחה.",
 };
 
 export default async function AdminInstructorsPage({ searchParams }: AdminInstructorsPageProps) {
-  await requireAdmin();
+  const { user } = await requireAdmin();
+  const showSuperAdminPanel = Boolean(user?.email && isSuperAdminEmail(user.email));
 
-  const instructors = await getAdminInstructors();
+  const [instructors, adminManagers] = await Promise.all([
+    getAdminInstructors(),
+    showSuperAdminPanel ? getAdminManagers() : Promise.resolve([]),
+  ]);
   const { successMessage: deleteSuccessMessage, errorMessage } =
     resolveAdminDeleteFlashMessage(searchParams);
   const successKey = searchParams?.success;
@@ -70,6 +79,8 @@ export default async function AdminInstructorsPage({ searchParams }: AdminInstru
           {errorMessage}
         </p>
       ) : null}
+
+      {showSuperAdminPanel ? <AdminManagersPanel managers={adminManagers} /> : null}
 
       <AdminInstructorsManagement instructors={instructors} />
     </Container>

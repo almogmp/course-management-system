@@ -3,17 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { requireAdmin, requireAuth } from "@/lib/auth/guards";
+import { requireAdmin } from "@/lib/auth/guards";
+import { instructorExists } from "@/lib/instructors/get-instructors-for-select";
 import { parseRequiredRate } from "@/lib/financial/parse-rates";
+import { parseSchoolYearFromForm } from "@/lib/school-year-form";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
 type CourseInsert = Database["public"]["Tables"]["courses"]["Insert"];
 
-const LEGACY_SCHOOL_YEAR = "—";
-
 export async function createCourseAction(formData: FormData): Promise<void> {
-  await requireAuth();
+  await requireAdmin();
 
   const name = String(formData.get("name") ?? "").trim();
   const institutionId = String(formData.get("institution_id") ?? "").trim();
@@ -23,11 +23,18 @@ export async function createCourseAction(formData: FormData): Promise<void> {
   const targetHoursRaw = String(formData.get("target_instructor_hours") ?? "").trim();
   const institutionRateRaw = String(formData.get("institution_hourly_rate") ?? "").trim();
   const instructorRateRaw = String(formData.get("instructor_hourly_rate") ?? "").trim();
+  const schoolYear = parseSchoolYearFromForm(formData);
 
-  if (!name || !institutionId || !coordinatorId || !leadInstructorId) {
-    redirect(
-      `/courses?create=1&error=${encodeURIComponent("יש למלא את כל שדות החובה.")}`,
-    );
+  if (!name) {
+    redirect(`/courses?create=1&error=${encodeURIComponent("יש למלא שם קורס.")}`);
+  }
+
+  if (!institutionId) {
+    redirect(`/courses?create=1&error=${encodeURIComponent("יש לבחור מוסד.")}`);
+  }
+
+  if (!leadInstructorId) {
+    redirect(`/courses?create=1&error=${encodeURIComponent("יש לבחור מדריך.")}`);
   }
 
   const supabase = await createServerSupabaseClient();
@@ -45,29 +52,59 @@ export async function createCourseAction(formData: FormData): Promise<void> {
   }
 
   if (!primarySupplierId) {
-    redirect(
-      `/courses?create=1&error=${encodeURIComponent("יש לבחור ספק לקורס.")}`,
-    );
+    redirect(`/courses?create=1&error=${encodeURIComponent("יש לבחור ספק.")}`);
   }
 
-  const { data: coordinator, error: coordinatorError } = await supabase
-    .from("institution_coordinators")
-    .select("id, full_name, institution_id")
-    .eq("id", coordinatorId)
-    .maybeSingle();
+  const instructorIsValid = await instructorExists(supabase, leadInstructorId);
 
-  if (coordinatorError || !coordinator || coordinator.institution_id !== institutionId) {
-    redirect(
-      `/courses?create=1&error=${encodeURIComponent("יש לבחור רכז תקין מהמוסד שנבחר.")}`,
-    );
+  if (!instructorIsValid) {
+    redirect(`/courses?create=1&error=${encodeURIComponent("המדריך שנבחר אינו פעיל במערכת.")}`);
   }
 
-  const institutionRate = parseRequiredRate(institutionRateRaw, "מחיר לשעה מהמוסד");
+  let coordinatorName: string;
+  let resolvedCoordinatorId: string | null = coordinatorId || null;
+
+  if (coordinatorId) {
+    const { data: coordinator, error: coordinatorError } = await supabase
+      .from("institution_coordinators")
+      .select("id, full_name, institution_id")
+      .eq("id", coordinatorId)
+      .maybeSingle();
+
+    if (coordinatorError || !coordinator || coordinator.institution_id !== institutionId) {
+      redirect(
+        `/courses?create=1&error=${encodeURIComponent("יש לבחור רכז תקין מהמוסד שנבחר.")}`,
+      );
+    }
+
+    coordinatorName = coordinator.full_name;
+    resolvedCoordinatorId = coordinator.id;
+  } else {
+    const { data: fallbackCoordinator } = await supabase
+      .from("institution_coordinators")
+      .select("id, full_name")
+      .eq("institution_id", institutionId)
+      .eq("is_active", true)
+      .order("full_name")
+      .limit(1)
+      .maybeSingle();
+
+    if (!fallbackCoordinator) {
+      redirect(
+        `/courses?create=1&error=${encodeURIComponent("למוסד שנבחר אין רכז פעיל. הוסיפו רכז למוסד.")}`,
+      );
+    }
+
+    coordinatorName = fallbackCoordinator.full_name;
+    resolvedCoordinatorId = fallbackCoordinator.id;
+  }
+
+  const institutionRate = parseRequiredRate(institutionRateRaw, "תעריף חברה");
   if (!institutionRate.ok) {
     redirect(`/courses?create=1&error=${encodeURIComponent(institutionRate.error)}`);
   }
 
-  const instructorRate = parseRequiredRate(instructorRateRaw, "שכר מדריך לשעה");
+  const instructorRate = parseRequiredRate(instructorRateRaw, "תעריף מדריך");
   if (!instructorRate.ok) {
     redirect(`/courses?create=1&error=${encodeURIComponent(instructorRate.error)}`);
   }
@@ -75,20 +112,18 @@ export async function createCourseAction(formData: FormData): Promise<void> {
   const targetInstructorHours = targetHoursRaw ? Number(targetHoursRaw) : null;
 
   if (targetInstructorHours !== null && (Number.isNaN(targetInstructorHours) || targetInstructorHours < 0)) {
-    redirect(
-      `/courses?create=1&error=${encodeURIComponent("יעד שעות אינו תקין.")}`,
-    );
+    redirect(`/courses?create=1&error=${encodeURIComponent("יעד שעות אינו תקין.")}`);
   }
 
   const payload: CourseInsert = {
     name,
     institution_id: institutionId,
-    coordinator: coordinator.full_name,
-    coordinator_id: coordinator.id,
+    coordinator: coordinatorName,
+    coordinator_id: resolvedCoordinatorId,
     primary_supplier_id: primarySupplierId,
     lead_instructor_id: leadInstructorId,
     status: "active",
-    school_year: LEGACY_SCHOOL_YEAR,
+    school_year: schoolYear,
     instructor_hourly_wage: instructorRate.value,
     company_hourly_rate: institutionRate.value,
     instructor_hours: 0,
@@ -96,14 +131,18 @@ export async function createCourseAction(formData: FormData): Promise<void> {
     target_instructor_hours: targetInstructorHours,
   };
 
-  const { error } = await supabase.from("courses").insert(payload);
+  const { data: created, error } = await supabase
+    .from("courses")
+    .insert(payload)
+    .select("id")
+    .single();
 
-  if (error) {
-    redirect(`/courses?create=1&error=${encodeURIComponent(error.message)}`);
+  if (error || !created?.id) {
+    redirect(`/courses?create=1&error=${encodeURIComponent(error?.message ?? "יצירת הקורס נכשלה.")}`);
   }
 
   revalidatePath("/courses");
-  redirect("/courses");
+  redirect(`/courses/${created.id}/sessions?success=course_created`);
 }
 
 export async function updateCourseRatesAction(

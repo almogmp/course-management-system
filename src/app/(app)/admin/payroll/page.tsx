@@ -22,8 +22,12 @@ export default async function PayrollPage({ searchParams }: PayrollPageProps) {
 
   const monthView = parseMonthParam(searchParams?.month);
   const monthBounds = getMonthBounds(monthView);
-  const fromDate = searchParams?.from?.trim() || monthBounds.startDate;
-  const toDate = searchParams?.to?.trim() || monthBounds.endDate;
+  const monthParam = `${monthView.year}-${String(monthView.month + 1).padStart(2, "0")}`;
+
+  const manualFrom = searchParams?.from?.trim();
+  const manualTo = searchParams?.to?.trim();
+  const fromDate = manualFrom || monthBounds.startDate;
+  const toDate = manualTo || monthBounds.endDate;
   const instructorId = searchParams?.instructor?.trim() || undefined;
 
   const supabase = await createServerSupabaseClient();
@@ -53,26 +57,25 @@ export default async function PayrollPage({ searchParams }: PayrollPageProps) {
       >
         <div className="space-y-2">
           <label htmlFor="month" className="block text-sm font-medium text-foreground">
-            חודש (ברירת מחדל)
+            חודש
           </label>
           <input
             id="month"
             name="month"
             type="month"
-            defaultValue={`${monthView.year}-${String(monthView.month).padStart(2, "0")}`}
+            defaultValue={monthParam}
             dir="ltr"
             className="min-h-11 w-full rounded-lg border border-border bg-background px-3 py-2"
           />
         </div>
         <div className="space-y-2">
           <label htmlFor="from" className="block text-sm font-medium text-foreground">
-            מתאריך
+            תאריך התחלה
           </label>
           <input
             id="from"
             name="from"
             type="date"
-            required
             defaultValue={fromDate}
             dir="ltr"
             className="min-h-11 w-full rounded-lg border border-border bg-background px-3 py-2"
@@ -80,13 +83,12 @@ export default async function PayrollPage({ searchParams }: PayrollPageProps) {
         </div>
         <div className="space-y-2">
           <label htmlFor="to" className="block text-sm font-medium text-foreground">
-            עד תאריך
+            תאריך סיום
           </label>
           <input
             id="to"
             name="to"
             type="date"
-            required
             defaultValue={toDate}
             dir="ltr"
             className="min-h-11 w-full rounded-lg border border-border bg-background px-3 py-2"

@@ -55,7 +55,8 @@ export function AdminReportsToolbar({ report }: AdminReportsToolbarProps) {
         </p>
       ) : null}
       <p className="text-center text-xs text-muted-foreground">
-        {report.rows.length} שורות · מזהה סינון: {query || "ברירת מחדל"}
+        {report.rows.length} שורות
+        {query ? ` · ${query}` : ""}
       </p>
     </div>
   );

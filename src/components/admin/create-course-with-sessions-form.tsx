@@ -14,15 +14,22 @@ import { BULK_WEEKDAY_OPTIONS } from "@/components/sessions/constants";
 import { Button } from "@/components/ui/button";
 import { filterInstitutionsBySupplier } from "@/lib/courses/filter-institutions-by-supplier";
 import type { CourseFormOptions } from "@/lib/courses/get-course-form-options";
+import type { SchoolYear } from "@/lib/school-year";
 
 type CreateCourseWithSessionsFormProps = {
   options: CourseFormOptions;
+  schoolYearOptions: SchoolYear[];
+  defaultSchoolYearStart: number;
 };
 
 const inputClassName =
   "min-h-11 w-full rounded-lg border border-border bg-background px-4 py-3 text-base text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
-export function CreateCourseWithSessionsForm({ options }: CreateCourseWithSessionsFormProps) {
+export function CreateCourseWithSessionsForm({
+  options,
+  schoolYearOptions,
+  defaultSchoolYearStart,
+}: CreateCourseWithSessionsFormProps) {
   const router = useRouter();
   const [supplierId, setSupplierId] = useState("");
   const [institutionId, setInstitutionId] = useState("");
@@ -243,6 +250,25 @@ export function CreateCourseWithSessionsForm({ options }: CreateCourseWithSessio
           </div>
 
           <CombinedCourseRateFields />
+
+          <div className="space-y-2">
+            <label htmlFor="combined-school-year" className="block text-sm font-medium text-foreground">
+              שנת לימודים
+            </label>
+            <select
+              id="combined-school-year"
+              name="school_year"
+              required
+              defaultValue={String(defaultSchoolYearStart)}
+              className={inputClassName}
+            >
+              {schoolYearOptions.map((year) => (
+                <option key={year.label} value={String(year.startYear)}>
+                  {year.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="space-y-4 border-t border-border pt-6">

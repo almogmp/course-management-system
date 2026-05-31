@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { mapOAuthLoginError } from "@/lib/auth/oauth-errors";
 import { getPostAuthPath } from "@/lib/auth/redirects";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import { cn } from "@/lib/utils";
@@ -79,31 +80,50 @@ export function LoginForm({
     setError(null);
     setLoading(true);
 
-    const supabase = getSupabaseBrowserClient();
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
 
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
+      });
 
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-      },
-    });
+      if (oauthError) {
+        setLoading(false);
+        setError(mapOAuthLoginError(oauthError.message, window.location.origin));
+        return;
+      }
 
-    setLoading(false);
+      if (data?.url) {
+        window.location.assign(data.url);
+        return;
+      }
 
-    if (oauthError) {
-      setError(oauthError.message);
+      setLoading(false);
+      setError(
+        mapOAuthLoginError(
+          "לא התקבלה כתובת התחברות מ-Google. בדקו שה-Provider מופעל ב-Supabase.",
+          window.location.origin,
+        ),
+      );
+    } catch (caught) {
+      setLoading(false);
+      const message = caught instanceof Error ? caught.message : "התחברות Google נכשלה.";
+      setError(mapOAuthLoginError(message, window.location.origin));
     }
   }
 
   return (
     <div className={cn("w-full max-w-md space-y-6", className)}>
       <header className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-          התחברות
-        </h1>
-
+        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">התחברות</h1>
         <p className="text-sm text-muted-foreground sm:text-base">
           התחברות עם מייל וסיסמה או עם Google
         </p>
@@ -111,7 +131,7 @@ export function LoginForm({
 
       {error ? (
         <p
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
           role="alert"
         >
           {error}
@@ -120,13 +140,9 @@ export function LoginForm({
 
       <form onSubmit={handleEmailLogin} className="space-y-4" noValidate>
         <div className="space-y-2">
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-foreground"
-          >
+          <label htmlFor="email" className="block text-sm font-medium text-foreground">
             דוא&quot;ל
           </label>
-
           <input
             id="email"
             name="email"
@@ -144,13 +160,9 @@ export function LoginForm({
         </div>
 
         <div className="space-y-2">
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-foreground"
-          >
+          <label htmlFor="password" className="block text-sm font-medium text-foreground">
             סיסמה
           </label>
-
           <input
             id="password"
             name="password"
@@ -165,11 +177,7 @@ export function LoginForm({
           />
         </div>
 
-        <Button
-          type="submit"
-          className="min-h-11 w-full text-base"
-          disabled={loading}
-        >
+        <Button type="submit" className="min-h-11 w-full text-base" disabled={loading}>
           {loading ? "מתחבר..." : "התחברות"}
         </Button>
       </form>
@@ -178,11 +186,8 @@ export function LoginForm({
         <div className="absolute inset-0 flex items-center" aria-hidden>
           <span className="w-full border-t border-border" />
         </div>
-
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            או
-          </span>
+          <span className="bg-background px-2 text-muted-foreground">או</span>
         </div>
       </div>
 

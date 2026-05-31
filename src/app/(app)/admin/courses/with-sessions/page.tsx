@@ -7,6 +7,7 @@ import { isAdminEmail } from "@/config/admin";
 import { requireAdmin } from "@/lib/auth/guards";
 import { getAuthSnapshot } from "@/lib/auth/session";
 import { getCourseFormOptions } from "@/lib/courses/get-course-form-options";
+import { buildSchoolYearOptions, getCurrentSchoolYearStartYear } from "@/lib/school-year";
 
 export default async function AdminCreateCourseWithSessionsPage() {
   await requireAdmin();
@@ -17,6 +18,8 @@ export default async function AdminCreateCourseWithSessionsPage() {
   }
 
   const options = await getCourseFormOptions();
+  const currentSchoolYearStart = getCurrentSchoolYearStartYear();
+  const schoolYearOptions = buildSchoolYearOptions(currentSchoolYearStart, 3);
 
   return (
     <Container as="main" className="flex flex-1 flex-col gap-6 py-8">
@@ -32,7 +35,11 @@ export default async function AdminCreateCourseWithSessionsPage() {
         </ButtonLink>
       </header>
 
-      <CreateCourseWithSessionsForm options={options} />
+      <CreateCourseWithSessionsForm
+        options={options}
+        schoolYearOptions={schoolYearOptions}
+        defaultSchoolYearStart={currentSchoolYearStart}
+      />
     </Container>
   );
 }

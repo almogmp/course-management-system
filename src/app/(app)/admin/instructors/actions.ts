@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/guards";
-import { setInstructorPasswordForAdmin } from "@/lib/auth/admin-instructor-password";
+import { setPasswordForAdmin } from "@/lib/auth/admin-instructor-password";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -53,7 +53,7 @@ export async function updateInstructorAction(
   instructorId: string,
   formData: FormData,
 ): Promise<void> {
-  await requireAdmin();
+  const { user } = await requireAdmin();
 
   const fullName = String(formData.get("full_name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
@@ -83,11 +83,17 @@ export async function updateInstructorAction(
   let linkedUserId = existing.user_id;
 
   if (newPassword.trim()) {
-    const passwordResult = await setInstructorPasswordForAdmin({
-      email,
+    if (!user?.email) {
+      redirect(`${INSTRUCTORS_PATH}?error=${encodeURIComponent("לא נמצא חשבון מחובר.")}`);
+    }
+
+    const passwordResult = await setPasswordForAdmin({
+      actorEmail: user.email,
+      targetEmail: email,
       fullName,
       phone,
       userId: existing.user_id,
+      instructorId,
       newPassword: newPassword.trim(),
     });
 
@@ -113,7 +119,7 @@ export async function updateInstructorAction(
 
   revalidatePath(INSTRUCTORS_PATH);
   redirect(
-    `${INSTRUCTORS_PATH}?success=${newPassword.trim() ? "updated_with_password" : "updated"}`,
+    `${INSTRUCTORS_PATH}?success=${newPassword.trim() ? "password_updated" : "updated"}`,
   );
 }
 

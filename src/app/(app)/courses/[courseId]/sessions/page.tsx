@@ -82,6 +82,7 @@ export default async function CourseSessionsPage({
   const { successMessage: deleteSuccessMessage, errorMessage: deleteErrorMessage } =
     resolveAdminDeleteFlashMessage(searchParams);
   const showRatesUpdated = searchParams?.success === "rates_updated";
+  const courseCreated = searchParams?.success === "course_created";
   const combinedCreated = searchParams?.success === "combined_created";
   const combinedCreatedCount = Number(searchParams?.created ?? "0");
   const combinedSkippedCount = Number(searchParams?.skipped ?? "0");
@@ -145,6 +146,15 @@ export default async function CourseSessionsPage({
           role="status"
         >
           תמחור הקורס עודכן בהצלחה.
+        </p>
+      ) : null}
+
+      {courseCreated ? (
+        <p
+          className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+          role="status"
+        >
+          הקורס נוצר בהצלחה. ניתן להוסיף מפגשים למטה.
         </p>
       ) : null}
 

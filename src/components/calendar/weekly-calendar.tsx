@@ -17,7 +17,13 @@ function sortSessionsByStartTime(
   return [...daySessions].sort((a, b) => a.start_time.localeCompare(b.start_time));
 }
 
-function DenseDaySessions({ daySessions, dense }: { daySessions: WeeklyCalendarSession[]; dense: boolean }) {
+function DaySessionsList({
+  daySessions,
+  dense,
+}: {
+  daySessions: WeeklyCalendarSession[];
+  dense: boolean;
+}) {
   return (
     <ul className={cn("space-y-1", dense && "space-y-0.5")}>
       {daySessions.map((session) => (
@@ -26,6 +32,28 @@ function DenseDaySessions({ daySessions, dense }: { daySessions: WeeklyCalendarS
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Scrollable only when content exceeds max height; never clips sessions. */
+function DaySessionsScrollArea({
+  daySessions,
+  dense,
+  className,
+}: {
+  daySessions: WeeklyCalendarSession[];
+  dense: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "min-h-0 overflow-y-auto overscroll-contain",
+        className,
+      )}
+    >
+      <DaySessionsList daySessions={daySessions} dense={dense} />
+    </div>
   );
 }
 
@@ -47,10 +75,12 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
       <div className="space-y-6 md:hidden">
         {weekDays.map((day) => {
           const daySessions = sessionsByDate[day.dateKey] ?? [];
+          const dayDense = dense || daySessions.length >= 3;
+          const useScrollCap = daySessions.length >= 4;
 
           return (
-            <section key={day.dateKey} className="text-start">
-              <div className="mb-2">
+            <section key={day.dateKey} className="min-h-0 text-start">
+              <div className="mb-2 shrink-0">
                 <CalendarDayHeader
                   weekdayLabel={day.label}
                   dayNumber={day.dayNumber}
@@ -62,27 +92,34 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
               </div>
               {daySessions.length === 0 ? (
                 <p className="text-xs text-muted-foreground">אין מפגשים</p>
+              ) : useScrollCap ? (
+                <DaySessionsScrollArea
+                  daySessions={daySessions}
+                  dense={dayDense}
+                  className="max-h-[min(28rem,65vh)]"
+                />
               ) : (
-                <DenseDaySessions daySessions={daySessions} dense={dense} />
+                <DaySessionsList daySessions={daySessions} dense={dayDense} />
               )}
             </section>
           );
         })}
       </div>
 
-      <div className="hidden gap-2 md:grid md:grid-cols-7">
+      <div className="hidden min-h-0 gap-2 md:grid md:grid-cols-7 md:items-stretch">
         {weekDays.map((day) => {
           const daySessions = sessionsByDate[day.dateKey] ?? [];
+          const dayDense = dense || daySessions.length >= 3;
 
           return (
             <div
               key={day.dateKey}
               className={cn(
-                "flex min-h-52 max-h-72 flex-col rounded-xl border bg-surface p-2 lg:max-h-80 xl:max-h-96",
+                "flex min-h-0 flex-col rounded-xl border bg-surface p-2 sm:min-h-52",
                 day.isToday ? "border-primary ring-2 ring-primary/20" : "border-border",
               )}
             >
-              <div className="mb-2">
+              <div className="mb-2 shrink-0">
                 <CalendarDayHeader
                   weekdayLabel={day.label}
                   dayNumber={day.dayNumber}
@@ -98,9 +135,11 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
                   —
                 </p>
               ) : (
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                  <DenseDaySessions daySessions={daySessions} dense={dense || daySessions.length >= 3} />
-                </div>
+                <DaySessionsScrollArea
+                  daySessions={daySessions}
+                  dense={dayDense}
+                  className="max-h-[min(24rem,70vh)] flex-1 lg:max-h-[min(28rem,75vh)] xl:max-h-[min(32rem,80vh)]"
+                />
               )}
             </div>
           );
