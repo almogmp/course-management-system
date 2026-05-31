@@ -31,11 +31,20 @@ export default async function AdminInstructorsPage({ searchParams }: AdminInstru
   const { user } = await requireAdmin();
   const showSuperAdminPanel = Boolean(user?.email && isSuperAdminEmail(user.email));
 
-  const [instructors, adminManagers] = await Promise.all([
-    getAdminInstructors(),
-    showSuperAdminPanel ? getAdminManagers() : Promise.resolve([]),
-  ]);
-  const { successMessage: deleteSuccessMessage, errorMessage } =
+  const instructorsResult = await getAdminInstructors();
+  const managersResult = showSuperAdminPanel
+    ? await getAdminManagers()
+    : { ok: true as const, managers: [] };
+
+  const loadError =
+    (!instructorsResult.ok && instructorsResult.error) ||
+    (!managersResult.ok && managersResult.error) ||
+    null;
+
+  const instructors = instructorsResult.ok ? instructorsResult.instructors : [];
+  const adminManagers = managersResult.ok ? managersResult.managers : [];
+
+  const { successMessage: deleteSuccessMessage, errorMessage: queryErrorMessage } =
     resolveAdminDeleteFlashMessage(searchParams);
   const successKey = searchParams?.success;
   const successMessage =
@@ -71,18 +80,29 @@ export default async function AdminInstructorsPage({ searchParams }: AdminInstru
         </p>
       ) : null}
 
-      {errorMessage ? (
+      {queryErrorMessage ? (
         <p
           className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
           role="alert"
         >
-          {errorMessage}
+          {queryErrorMessage}
         </p>
       ) : null}
 
-      {showSuperAdminPanel ? <AdminManagersPanel managers={adminManagers} /> : null}
+      {loadError ? (
+        <p
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          {loadError}
+        </p>
+      ) : null}
 
-      <AdminInstructorsManagement instructors={instructors} />
+      {!loadError && showSuperAdminPanel ? (
+        <AdminManagersPanel managers={adminManagers} />
+      ) : null}
+
+      {!loadError ? <AdminInstructorsManagement instructors={instructors} /> : null}
     </Container>
   );
 }

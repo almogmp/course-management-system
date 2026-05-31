@@ -1,7 +1,8 @@
 import "server-only";
 
 import { ADMIN_EMAILS } from "@/config/admin";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { logServerError } from "@/lib/errors/safe-error-message";
+import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type AdminManagerRow = {
   id: string;
@@ -9,20 +10,41 @@ export type AdminManagerRow = {
   approval_status: string;
 };
 
-export async function getAdminManagers(): Promise<AdminManagerRow[]> {
-  const admin = createSupabaseAdminClient();
+export type AdminManagersLoadResult =
+  | { ok: true; managers: AdminManagerRow[] }
+  | { ok: false; error: string };
 
-  const { data, error } = await admin
+const LOAD_ERROR_MESSAGE =
+  "לא ניתן לטעון את רשימת מנהלי המערכת. נסו לרענן את הדף.";
+
+/**
+ * Super-admin panel data — service role server-side only (page guarded by requireAdmin).
+ */
+export async function getAdminManagers(): Promise<AdminManagersLoadResult> {
+  const adminResult = tryCreateSupabaseAdminClient();
+
+  if (!adminResult.ok) {
+    logServerError("getAdminManagers.serviceRole", adminResult.error);
+    return { ok: false, error: adminResult.error };
+  }
+
+  const supabase = adminResult.client;
+
+  const { data, error } = await supabase
     .from("profiles")
-    .select("id, email, approval_status")
+    .select("id, email, role, approval_status")
     .eq("role", "admin")
     .order("email");
 
   if (error) {
-    throw new Error(error.message);
+    logServerError("getAdminManagers.profiles", error);
+    return { ok: false, error: LOAD_ERROR_MESSAGE };
   }
 
   const allowed = new Set(ADMIN_EMAILS.map((e) => e.toLowerCase()));
 
-  return (data ?? []).filter((row) => allowed.has(row.email.toLowerCase()));
+  return {
+    ok: true,
+    managers: (data ?? []).filter((row) => allowed.has(row.email.toLowerCase())),
+  };
 }

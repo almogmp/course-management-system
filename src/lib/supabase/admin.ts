@@ -8,7 +8,7 @@ import type { Database } from "@/types/database";
 export type SupabaseAdminClient = ReturnType<typeof createClient<Database>>;
 
 export const SERVICE_ROLE_MISSING_MESSAGE =
-  "חסר מפתח שירות להגדרת סיסמה. יש לבדוק את הגדרות השרת." as const;
+  "חסר מפתח שירות בשרת (SUPABASE_SERVICE_ROLE_KEY). יש להגדיר ב-Vercel ולנסות שוב." as const;
 
 export type AdminClientResult =
   | { ok: true; client: SupabaseAdminClient }
