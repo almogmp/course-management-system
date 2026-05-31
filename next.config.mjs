@@ -2,6 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  async rewrites() {
+    return [
+      {
+        source: "/favicon.ico",
+        destination: "/icon.png",
+      },
+    ];
+  },
   async headers() {
     return [
       {

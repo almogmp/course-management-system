@@ -14,6 +14,10 @@ import {
   INSTRUCTOR_STATUS_TOO_EARLY_ERROR,
   SIMPLE_SESSION_STATUS_OPTIONS,
 } from "@/lib/sessions/simple-session-status";
+import {
+  isSessionStatusActionFailure,
+  STATUS_UPDATE_GENERIC_ERROR,
+} from "@/lib/sessions/session-status-action-result";
 import { cn } from "@/lib/utils";
 
 type SessionSimpleStatusSelectProps = {
@@ -61,17 +65,21 @@ export function SessionSimpleStatusSelect({
     setPending(true);
     setError(null);
 
-    const result = await updateSimpleSessionStatusAction(courseId, sessionId, nextValue);
+    try {
+      const result = await updateSimpleSessionStatusAction(courseId, sessionId, nextValue);
 
-    setPending(false);
-    actionLock.current = false;
+      if (isSessionStatusActionFailure(result)) {
+        setError(result?.error ?? STATUS_UPDATE_GENERIC_ERROR);
+        return;
+      }
 
-    if (result.error) {
-      setError(result.error);
-      return;
+      router.refresh();
+    } catch {
+      setError(STATUS_UPDATE_GENERIC_ERROR);
+    } finally {
+      setPending(false);
+      actionLock.current = false;
     }
-
-    router.refresh();
   }
 
   return (

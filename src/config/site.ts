@@ -23,6 +23,11 @@ export const defaultMetadata: Metadata = {
   },
   description: siteConfig.description,
   metadataBase,
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
   openGraph: {
     type: "website",
     locale: "he_IL",

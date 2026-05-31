@@ -11,6 +11,11 @@ import {
 import type { CourseSessionListItem } from "@/components/sessions/get-course-sessions";
 import { Button } from "@/components/ui/button";
 import { SESSION_ACTION_SUCCESS } from "@/lib/sessions/action-messages";
+import {
+  isSessionStatusActionFailure,
+  STATUS_UPDATE_GENERIC_ERROR,
+  type SessionStatusActionResult,
+} from "@/lib/sessions/session-status-action-result";
 import { isSessionDelayed } from "@/lib/sessions/session-delay";
 import { instructorOwnsSession } from "@/lib/sessions/session-workflow";
 
@@ -50,7 +55,7 @@ export function SessionAttendanceActions({
   async function runAction(
     key: string,
     successMessage: string,
-    action: () => Promise<{ error?: string | null; success?: boolean }>,
+    action: () => Promise<SessionStatusActionResult>,
   ) {
     if (actionLock.current) {
       return;
@@ -61,18 +66,22 @@ export function SessionAttendanceActions({
     setError(null);
     setSuccess(null);
 
-    const result = await action();
+    try {
+      const result = await action();
 
-    setPending(null);
-    actionLock.current = false;
+      if (isSessionStatusActionFailure(result)) {
+        setError(result?.error ?? STATUS_UPDATE_GENERIC_ERROR);
+        return;
+      }
 
-    if (result.error) {
-      setError(result.error);
-      return;
+      setSuccess(successMessage);
+      router.refresh();
+    } catch {
+      setError(STATUS_UPDATE_GENERIC_ERROR);
+    } finally {
+      setPending(null);
+      actionLock.current = false;
     }
-
-    setSuccess(successMessage);
-    router.refresh();
   }
 
   const showArrival = session.status === "planned";

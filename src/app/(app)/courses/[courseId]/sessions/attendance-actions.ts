@@ -4,10 +4,9 @@ import { revalidatePath } from "next/cache";
 
 import type { SessionStatus } from "@/components/sessions/constants";
 import { isAdminEmail } from "@/config/admin";
-import { requireAuth } from "@/lib/auth/guards";
+import { requireAuthForAction } from "@/lib/auth/require-for-action";
 import { getCurrentInstructorId } from "@/lib/auth/instructor";
-import { getAuthSnapshot } from "@/lib/auth/session";
-import { mapSessionActionError } from "@/lib/sessions/action-messages";
+import { SESSION_ACTION_SUCCESS, mapSessionActionError } from "@/lib/sessions/action-messages";
 import {
   hasSessionStarted,
   INSTRUCTOR_STATUS_TOO_EARLY_ERROR,
@@ -15,13 +14,17 @@ import {
   toDbSimpleSessionStatus,
   type SessionsListAdminStatusValue,
 } from "@/lib/sessions/simple-session-status";
+import {
+  STATUS_UPDATE_GENERIC_ERROR,
+  sessionStatusFailure,
+  sessionStatusSuccess,
+  type SessionStatusActionResult,
+} from "@/lib/sessions/session-status-action-result";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
-export type AttendanceActionState = {
-  success?: boolean;
-  error?: string | null;
-};
+/** @deprecated Prefer SessionStatusActionResult */
+export type AttendanceActionState = SessionStatusActionResult;
 
 function revalidateSessionPaths(courseId: string) {
   revalidatePath(`/courses/${courseId}/sessions`);
@@ -57,8 +60,8 @@ async function assertInstructorOwnsSession(
   return { ok: true };
 }
 
-function mapUpdateError(error: { message: string }): AttendanceActionState {
-  return { error: mapSessionActionError(error.message) };
+function mapUpdateError(error: { message: string }): SessionStatusActionResult {
+  return sessionStatusFailure(mapSessionActionError(error.message));
 }
 
 function buildSimpleStatusPayload(
@@ -99,111 +102,118 @@ export async function updateSimpleSessionStatusAction(
   courseId: string,
   sessionId: string,
   statusInput: SessionsListAdminStatusValue,
-): Promise<AttendanceActionState> {
-  await requireAuth();
+): Promise<SessionStatusActionResult> {
+  try {
+    const auth = await requireAuthForAction();
 
-  const status = toDbSimpleSessionStatus(statusInput);
-  const parsed = parseSimpleSessionStatusInput(status);
+    if (!auth.ok) {
+      return sessionStatusFailure(auth.error);
+    }
 
-  if (!parsed) {
-    return { error: "סטטוס מפגש אינו תקין." };
-  }
+    const status = toDbSimpleSessionStatus(statusInput);
+    const parsed = parseSimpleSessionStatusInput(status);
 
-  const { user, isAdmin } = await getAuthSnapshot();
-  const asAdmin = Boolean(isAdmin && user?.email && isAdminEmail(user.email));
+    if (!parsed) {
+      return sessionStatusFailure("סטטוס מפגש אינו תקין.");
+    }
 
-  const supabase = await createServerSupabaseClient();
+    const asAdmin = Boolean(auth.isAdmin && auth.email && isAdminEmail(auth.email));
+    const supabase = await createServerSupabaseClient();
 
-  if (asAdmin) {
-    const { data: existing, error: fetchError } = await supabase
-      .from("sessions")
+    if (asAdmin) {
+      const { data: existing, error: fetchError } = await supabase
+        .from("sessions")
+        .select(
+          "cancellation_reason, actual_arrival_time, actual_start_time, actual_end_time",
+        )
+        .eq("id", sessionId)
+        .eq("course_id", courseId)
+        .maybeSingle();
+
+      if (fetchError) {
+        return mapUpdateError(fetchError);
+      }
+
+      if (!existing) {
+        return sessionStatusFailure("המפגש לא נמצא.");
+      }
+
+      const payload = buildSimpleStatusPayload(status, existing, { asAdmin: true });
+
+      const { error } = await supabase
+        .from("sessions")
+        .update(payload)
+        .eq("id", sessionId)
+        .eq("course_id", courseId);
+
+      if (error) {
+        return mapUpdateError(error);
+      }
+
+      revalidateSessionPaths(courseId);
+      return sessionStatusSuccess(SESSION_ACTION_SUCCESS.status);
+    }
+
+    const instructorId = await getCurrentInstructorId();
+
+    if (!instructorId) {
+      return sessionStatusFailure("לא נמצא פרופיל מדריך.");
+    }
+
+    const ownership = await assertInstructorOwnsSession(courseId, sessionId);
+
+    if (!ownership.ok) {
+      return sessionStatusFailure(ownership.error);
+    }
+
+    const instructorClient = supabase as unknown as typeof supabase & {
+      from: (relation: string) => ReturnType<typeof supabase.from>;
+    };
+
+    const { data: sessionRow, error: fetchError } = await instructorClient
+      .from("instructor_sessions")
       .select(
-        "cancellation_reason, actual_arrival_time, actual_start_time, actual_end_time",
+        "session_date, start_time, status, cancellation_reason, actual_arrival_time, actual_start_time, actual_end_time",
       )
       .eq("id", sessionId)
-      .eq("course_id", courseId)
       .maybeSingle();
 
     if (fetchError) {
       return mapUpdateError(fetchError);
     }
 
+    const existing = sessionRow as {
+      session_date: string;
+      start_time: string;
+      status: string;
+      cancellation_reason: string | null;
+      actual_arrival_time: string | null;
+      actual_start_time: string | null;
+      actual_end_time: string | null;
+    } | null;
+
     if (!existing) {
-      return { error: "המפגש לא נמצא." };
+      return sessionStatusFailure("המפגש לא נמצא.");
     }
 
-    const payload = buildSimpleStatusPayload(status, existing, { asAdmin: true });
+    if (!hasSessionStarted(existing.session_date, existing.start_time)) {
+      return sessionStatusFailure(INSTRUCTOR_STATUS_TOO_EARLY_ERROR);
+    }
 
-    const { error } = await supabase
-      .from("sessions")
-      .update(payload)
-      .eq("id", sessionId)
-      .eq("course_id", courseId);
+    const payload = buildSimpleStatusPayload(status, existing, { asAdmin: false });
+
+    const { error } = await supabase.from("sessions").update(payload).eq("id", sessionId);
 
     if (error) {
       return mapUpdateError(error);
     }
 
     revalidateSessionPaths(courseId);
-    return { success: true };
+    return sessionStatusSuccess(SESSION_ACTION_SUCCESS.status);
+  } catch (unknown) {
+    console.error("[updateSimpleSessionStatusAction]", unknown);
+    return sessionStatusFailure(STATUS_UPDATE_GENERIC_ERROR);
   }
-
-  const instructorId = await getCurrentInstructorId();
-
-  if (!instructorId) {
-    return { error: "לא נמצא פרופיל מדריך." };
-  }
-
-  const ownership = await assertInstructorOwnsSession(courseId, sessionId);
-
-  if (!ownership.ok) {
-    return { error: ownership.error };
-  }
-
-  const instructorClient = supabase as unknown as typeof supabase & {
-    from: (relation: string) => ReturnType<typeof supabase.from>;
-  };
-
-  const { data: sessionRow, error: fetchError } = await instructorClient
-    .from("instructor_sessions")
-    .select(
-      "session_date, start_time, status, cancellation_reason, actual_arrival_time, actual_start_time, actual_end_time",
-    )
-    .eq("id", sessionId)
-    .maybeSingle();
-
-  if (fetchError) {
-    return mapUpdateError(fetchError);
-  }
-
-  const existing = sessionRow as {
-    session_date: string;
-    start_time: string;
-    status: string;
-    cancellation_reason: string | null;
-    actual_arrival_time: string | null;
-    actual_start_time: string | null;
-    actual_end_time: string | null;
-  } | null;
-
-  if (!existing) {
-    return { error: "המפגש לא נמצא." };
-  }
-
-  if (!hasSessionStarted(existing.session_date, existing.start_time)) {
-    return { error: INSTRUCTOR_STATUS_TOO_EARLY_ERROR };
-  }
-
-  const payload = buildSimpleStatusPayload(status, existing, { asAdmin: false });
-
-  const { error } = await supabase.from("sessions").update(payload).eq("id", sessionId);
-
-  if (error) {
-    return mapUpdateError(error);
-  }
-
-  revalidateSessionPaths(courseId);
-  return { success: true };
 }
 
 /** @deprecated Use updateSimpleSessionStatusAction */
@@ -211,11 +221,11 @@ export async function adminQuickStatusAction(
   courseId: string,
   sessionId: string,
   status: SessionStatus,
-): Promise<AttendanceActionState> {
+): Promise<SessionStatusActionResult> {
   const parsed = parseSimpleSessionStatusInput(status);
 
   if (!parsed) {
-    return { error: "סטטוס מפגש אינו תקין." };
+    return sessionStatusFailure("סטטוס מפגש אינו תקין.");
   }
 
   return updateSimpleSessionStatusAction(courseId, sessionId, parsed);
@@ -224,83 +234,110 @@ export async function adminQuickStatusAction(
 export async function confirmArrivalAction(
   courseId: string,
   sessionId: string,
-): Promise<AttendanceActionState> {
-  await requireAuth();
+): Promise<SessionStatusActionResult> {
+  try {
+    const auth = await requireAuthForAction();
 
-  const ownership = await assertInstructorOwnsSession(courseId, sessionId);
+    if (!auth.ok) {
+      return sessionStatusFailure(auth.error);
+    }
 
-  if (!ownership.ok) {
-    return { error: ownership.error };
+    const ownership = await assertInstructorOwnsSession(courseId, sessionId);
+
+    if (!ownership.ok) {
+      return sessionStatusFailure(ownership.error);
+    }
+
+    const supabase = await createServerSupabaseClient();
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from("sessions")
+      .update({ status: "arrived", actual_arrival_time: now })
+      .eq("id", sessionId);
+
+    if (error) {
+      return mapUpdateError(error);
+    }
+
+    revalidateSessionPaths(courseId);
+    return sessionStatusSuccess(SESSION_ACTION_SUCCESS.arrival);
+  } catch (unknown) {
+    console.error("[confirmArrivalAction]", unknown);
+    return sessionStatusFailure(STATUS_UPDATE_GENERIC_ERROR);
   }
-
-  const supabase = await createServerSupabaseClient();
-  const now = new Date().toISOString();
-
-  const { error } = await supabase
-    .from("sessions")
-    .update({ status: "arrived", actual_arrival_time: now })
-    .eq("id", sessionId);
-
-  if (error) {
-    return mapUpdateError(error);
-  }
-
-  revalidateSessionPaths(courseId);
-  return { success: true };
 }
 
 export async function confirmSessionStartedAction(
   courseId: string,
   sessionId: string,
-): Promise<AttendanceActionState> {
-  await requireAuth();
+): Promise<SessionStatusActionResult> {
+  try {
+    const auth = await requireAuthForAction();
 
-  const ownership = await assertInstructorOwnsSession(courseId, sessionId);
+    if (!auth.ok) {
+      return sessionStatusFailure(auth.error);
+    }
 
-  if (!ownership.ok) {
-    return { error: ownership.error };
+    const ownership = await assertInstructorOwnsSession(courseId, sessionId);
+
+    if (!ownership.ok) {
+      return sessionStatusFailure(ownership.error);
+    }
+
+    const supabase = await createServerSupabaseClient();
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from("sessions")
+      .update({ status: "in_progress", actual_start_time: now })
+      .eq("id", sessionId);
+
+    if (error) {
+      return mapUpdateError(error);
+    }
+
+    revalidateSessionPaths(courseId);
+    return sessionStatusSuccess(SESSION_ACTION_SUCCESS.start);
+  } catch (unknown) {
+    console.error("[confirmSessionStartedAction]", unknown);
+    return sessionStatusFailure(STATUS_UPDATE_GENERIC_ERROR);
   }
-
-  const supabase = await createServerSupabaseClient();
-  const now = new Date().toISOString();
-
-  const { error } = await supabase
-    .from("sessions")
-    .update({ status: "in_progress", actual_start_time: now })
-    .eq("id", sessionId);
-
-  if (error) {
-    return mapUpdateError(error);
-  }
-
-  revalidateSessionPaths(courseId);
-  return { success: true };
 }
 
 export async function confirmSessionEndedAction(
   courseId: string,
   sessionId: string,
-): Promise<AttendanceActionState> {
-  await requireAuth();
+): Promise<SessionStatusActionResult> {
+  try {
+    const auth = await requireAuthForAction();
 
-  const ownership = await assertInstructorOwnsSession(courseId, sessionId);
+    if (!auth.ok) {
+      return sessionStatusFailure(auth.error);
+    }
 
-  if (!ownership.ok) {
-    return { error: ownership.error };
+    const ownership = await assertInstructorOwnsSession(courseId, sessionId);
+
+    if (!ownership.ok) {
+      return sessionStatusFailure(ownership.error);
+    }
+
+    const supabase = await createServerSupabaseClient();
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from("sessions")
+      .update({ status: "completed", actual_end_time: now })
+      .eq("id", sessionId);
+
+    if (error) {
+      return mapUpdateError(error);
+    }
+
+    revalidateSessionPaths(courseId);
+    return sessionStatusSuccess(SESSION_ACTION_SUCCESS.end);
+  } catch (unknown) {
+    console.error("[confirmSessionEndedAction]", unknown);
+    return sessionStatusFailure(STATUS_UPDATE_GENERIC_ERROR);
   }
-
-  const supabase = await createServerSupabaseClient();
-  const now = new Date().toISOString();
-
-  const { error } = await supabase
-    .from("sessions")
-    .update({ status: "completed", actual_end_time: now })
-    .eq("id", sessionId);
-
-  if (error) {
-    return mapUpdateError(error);
-  }
-
-  revalidateSessionPaths(courseId);
-  return { success: true };
 }
