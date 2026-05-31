@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { adminUpdateProfile } from "@/lib/admin/admin-profiles-server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { setPasswordForAdmin } from "@/lib/auth/admin-instructor-password";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -155,10 +156,9 @@ export async function setInstructorActiveAction(
   }
 
   if (!active && instructor.user_id) {
-    await supabase
-      .from("profiles")
-      .update({ notifications_enabled: false })
-      .eq("id", instructor.user_id);
+    await adminUpdateProfile("setInstructorActiveAction", instructor.user_id, {
+      notifications_enabled: false,
+    });
   }
 
   revalidatePath(INSTRUCTORS_PATH);

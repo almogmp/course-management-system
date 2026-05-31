@@ -1,8 +1,8 @@
 import "server-only";
 
 import { ADMIN_EMAILS } from "@/config/admin";
+import { adminSelectProfilesByRole } from "@/lib/admin/admin-profiles-server";
 import { logServerError } from "@/lib/errors/safe-error-message";
-import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type AdminManagerRow = {
   id: string;
@@ -21,23 +21,10 @@ const LOAD_ERROR_MESSAGE =
  * Super-admin panel data — service role server-side only (page guarded by requireAdmin).
  */
 export async function getAdminManagers(): Promise<AdminManagersLoadResult> {
-  const adminResult = tryCreateSupabaseAdminClient();
+  const profilesResult = await adminSelectProfilesByRole("getAdminManagers", "admin");
 
-  if (!adminResult.ok) {
-    logServerError("getAdminManagers.serviceRole", adminResult.error);
-    return { ok: false, error: adminResult.error };
-  }
-
-  const supabase = adminResult.client;
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, email, role, approval_status")
-    .eq("role", "admin")
-    .order("email");
-
-  if (error) {
-    logServerError("getAdminManagers.profiles", error);
+  if (!profilesResult.ok) {
+    logServerError("getAdminManagers.profiles", profilesResult.error);
     return { ok: false, error: LOAD_ERROR_MESSAGE };
   }
 
@@ -45,6 +32,12 @@ export async function getAdminManagers(): Promise<AdminManagersLoadResult> {
 
   return {
     ok: true,
-    managers: (data ?? []).filter((row) => allowed.has(row.email.toLowerCase())),
+    managers: profilesResult.profiles
+      .filter((row) => allowed.has(row.email.toLowerCase()))
+      .map((row) => ({
+        id: row.id,
+        email: row.email,
+        approval_status: row.approval_status,
+      })),
   };
 }

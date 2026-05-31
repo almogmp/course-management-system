@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  adminSelectProfilesByIds,
+  logAdminInstructorsProfileQuery,
+} from "@/lib/admin/admin-profiles-server";
 import { logServerError } from "@/lib/errors/safe-error-message";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -24,14 +28,14 @@ const LOAD_ERROR_MESSAGE =
 
 /**
  * Loads instructor list + linked profile fields for /admin/instructors only.
- * Uses service role server-side (after requireAdmin) — avoids profiles RLS/GRANT
- * failures when is_admin() is false or authenticated lacks table GRANT.
+ * Service role server-side (page guarded by requireAdmin).
  */
 export async function getAdminInstructors(): Promise<AdminInstructorsLoadResult> {
   const adminResult = tryCreateSupabaseAdminClient();
 
   if (!adminResult.ok) {
     logServerError("getAdminInstructors.serviceRole", adminResult.error);
+    logAdminInstructorsProfileQuery("getAdminInstructors", { phase: "no_service_role" }, adminResult.error);
     return { ok: false, error: adminResult.error };
   }
 
@@ -61,17 +65,14 @@ export async function getAdminInstructors(): Promise<AdminInstructorsLoadResult>
   >();
 
   if (userIds.length > 0) {
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, email, role, approval_status")
-      .in("id", userIds);
+    const profilesResult = await adminSelectProfilesByIds("getAdminInstructors.linkedProfiles", userIds);
 
-    if (profilesError) {
-      logServerError("getAdminInstructors.profiles", profilesError);
+    if (!profilesResult.ok) {
+      logServerError("getAdminInstructors.profiles", profilesResult.error);
       return { ok: false, error: LOAD_ERROR_MESSAGE };
     }
 
-    for (const profile of profiles ?? []) {
+    for (const profile of profilesResult.profiles) {
       profileByUserId.set(profile.id, {
         email: profile.email,
         role: profile.role,

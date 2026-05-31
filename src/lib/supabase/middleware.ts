@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
+import { getProfileForAdminMiddleware } from "@/lib/supabase/middleware-admin-profile";
 import type { Database } from "@/types/database";
 
 function isProtectedPath(pathname: string): boolean {
@@ -94,7 +95,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
       return NextResponse.redirect(redirectUrl);
     }
 
-    const profile = await getProfileForUser(supabase, user.id);
+    const profile = await getProfileForAdminMiddleware(user.id, user.email);
     const approvalRedirect = redirectForInstructorApproval(profile, request);
     if (approvalRedirect) {
       return approvalRedirect;

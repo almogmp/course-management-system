@@ -4,10 +4,13 @@ import { AdminManagersPanel } from "@/components/admin/admin-managers-panel";
 import { AdminInstructorsManagement } from "@/components/admin/admin-instructors-management";
 import { Container } from "@/components/ui/container";
 import { isSuperAdminEmail } from "@/config/admin";
-import { requireAdmin } from "@/lib/auth/guards";
 import { resolveAdminDeleteFlashMessage } from "@/lib/admin-delete/flash-message";
 import { getAdminManagers } from "@/lib/admin/get-admin-managers";
+import { requireAdmin } from "@/lib/auth/guards";
+import { logServerError } from "@/lib/errors/safe-error-message";
 import { getAdminInstructors } from "@/lib/instructors/get-admin-instructors";
+
+export const dynamic = "force-dynamic";
 
 type AdminInstructorsPageProps = {
   searchParams?: {
@@ -27,7 +30,10 @@ const successMessages: Record<string, string> = {
   admin_password_updated: "סיסמת המנהל עודכנה בהצלחה.",
 };
 
-export default async function AdminInstructorsPage({ searchParams }: AdminInstructorsPageProps) {
+const PAGE_LOAD_ERROR =
+  "לא ניתן לטעון את דף ניהול המדריכים. נסו לרענן. אם הבעיה נמשכת, בדקו את מפתח השירות ב-Vercel.";
+
+async function AdminInstructorsPageContent({ searchParams }: AdminInstructorsPageProps) {
   const { user } = await requireAdmin();
   const showSuperAdminPanel = Boolean(user?.email && isSuperAdminEmail(user.email));
 
@@ -105,4 +111,38 @@ export default async function AdminInstructorsPage({ searchParams }: AdminInstru
       {!loadError ? <AdminInstructorsManagement instructors={instructors} /> : null}
     </Container>
   );
+}
+
+export default async function AdminInstructorsPage(props: AdminInstructorsPageProps) {
+  try {
+    return await AdminInstructorsPageContent(props);
+  } catch (error) {
+    const digest = error instanceof Error ? (error as Error & { digest?: string }).digest : undefined;
+
+    if (digest === "DYNAMIC_SERVER_USAGE") {
+      throw error;
+    }
+
+    logServerError("AdminInstructorsPage", error);
+
+    return (
+      <Container as="main" className="flex flex-1 flex-col gap-6 py-8">
+        <header className="space-y-2 text-start">
+          <Link
+            href="/dashboard"
+            className="text-sm text-primary underline-offset-4 hover:underline"
+          >
+            חזרה לדשבורד
+          </Link>
+          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">ניהול מדריכים</h1>
+        </header>
+        <p
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          {PAGE_LOAD_ERROR}
+        </p>
+      </Container>
+    );
+  }
 }

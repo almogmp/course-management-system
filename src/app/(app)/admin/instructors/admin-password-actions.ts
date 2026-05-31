@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { adminSelectProfilesByIds } from "@/lib/admin/admin-profiles-server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { setPasswordForAdmin } from "@/lib/auth/admin-instructor-password";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const INSTRUCTORS_PATH = "/admin/instructors";
 
@@ -25,15 +25,19 @@ export async function resetAdminPasswordAction(
     redirect(`${INSTRUCTORS_PATH}?error=${encodeURIComponent("יש להזין סיסמה חדשה.")}`);
   }
 
-  const admin = createSupabaseAdminClient();
-  const { data: profile, error } = await admin
-    .from("profiles")
-    .select("id, email")
-    .eq("id", targetUserId)
-    .eq("role", "admin")
-    .maybeSingle();
+  const profilesResult = await adminSelectProfilesByIds("resetAdminPasswordAction", [targetUserId]);
 
-  if (error || !profile?.email) {
+  if (!profilesResult.ok) {
+    redirect(
+      `${INSTRUCTORS_PATH}?error=${encodeURIComponent("לא ניתן לטעון פרופיל מנהל.")}`,
+    );
+  }
+
+  const profile = profilesResult.profiles.find(
+    (row) => row.id === targetUserId && row.role === "admin",
+  );
+
+  if (!profile?.email) {
     redirect(`${INSTRUCTORS_PATH}?error=${encodeURIComponent("מנהל לא נמצא.")}`);
   }
 

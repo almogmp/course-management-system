@@ -1,3 +1,5 @@
+import { isAdminEmail } from "@/config/admin";
+import { adminSelectOwnProfile } from "@/lib/admin/admin-profiles-server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type AuthProfile = {
@@ -12,7 +14,7 @@ export type AuthSnapshot = {
   isAdmin: boolean;
 };
 
-/** מצב התחברות + פרופיל מ-public.profiles (RLS) */
+/** מצב התחברות + פרופיל (service role server-side — avoids profiles GRANT/RLS on authenticated). */
 export async function getAuthSnapshot(): Promise<AuthSnapshot> {
   const supabase = await createServerSupabaseClient();
 
@@ -24,20 +26,10 @@ export async function getAuthSnapshot(): Promise<AuthSnapshot> {
     return { user: null, profile: null, isAdmin: false };
   }
 
-  const { data: profileRow } = await supabase
-    .from("profiles")
-    .select("role, approval_status")
-    .eq("id", user.id)
-    .single();
+  const email = user.email?.trim().toLowerCase();
+  const profile = await adminSelectOwnProfile("getAuthSnapshot", user.id, email);
 
-  const profile: AuthProfile | null = profileRow
-    ? {
-        role: profileRow.role,
-        approval_status: profileRow.approval_status,
-      }
-    : null;
-
-  const isAdmin = profile?.role === "admin";
+  const isAdmin = profile?.role === "admin" || Boolean(email && isAdminEmail(email));
 
   return {
     user: { id: user.id, email: user.email ?? undefined },
