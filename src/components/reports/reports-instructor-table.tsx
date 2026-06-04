@@ -1,9 +1,9 @@
 import { formatSessionHours } from "@/components/sessions/format";
 import { formatCurrency } from "@/lib/financial/format-currency";
-import type { InstructorReportRow } from "@/lib/reports/types";
+import type { PartnerReportEntityRow } from "@/lib/reports/partner-report-types";
 
 type ReportsInstructorTableProps = {
-  rows: InstructorReportRow[];
+  rows: PartnerReportEntityRow[];
 };
 
 function EmptyState({ message }: { message: string }) {
@@ -14,9 +14,16 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+const moneyColumns = [
+  { key: "grossRevenue" as const, label: "תקבול ברוטו" },
+  { key: "vat" as const, label: "מע״מ" },
+  { key: "instructorCost" as const, label: "עלות מדריך" },
+  { key: "grossProfit" as const, label: "רווח גולמי" },
+];
+
 export function ReportsInstructorTable({ rows }: ReportsInstructorTableProps) {
   if (rows.length === 0) {
-    return <EmptyState message="אין נתוני מדריכים לחודש הנבחר." />;
+    return <EmptyState message="אין מפגשים שבוצעו בטווח התאריכים שנבחר." />;
   }
 
   return (
@@ -26,75 +33,57 @@ export function ReportsInstructorTable({ rows }: ReportsInstructorTableProps) {
       <ul className="space-y-3 md:hidden">
         {rows.map((row) => (
           <li
-            key={row.instructorId}
+            key={row.id}
             className="rounded-xl border border-border bg-surface p-4 text-center"
           >
-            <p className="font-semibold text-foreground">{row.instructorName}</p>
+            <p className="font-semibold text-foreground">{row.name}</p>
             <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
               <div>
-                <dt className="text-muted-foreground">כמות מפגשים</dt>
-                <dd className="font-medium">{row.sessionCount}</dd>
+                <dt className="text-muted-foreground">מפגשים שבוצעו</dt>
+                <dd className="font-medium">{row.completedSessionCount}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">בוצעו</dt>
-                <dd className="font-medium">{row.completedCount}</dd>
+                <dt className="text-muted-foreground">סה״כ שעות</dt>
+                <dd className="font-medium">{formatSessionHours(row.totalHours)}</dd>
               </div>
-              <div>
-                <dt className="text-muted-foreground">בוטלו</dt>
-                <dd className="font-medium">{row.cancelledCount}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">ממתינים לאישור</dt>
-                <dd className="font-medium">{row.pendingApprovalCount}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">שעות מדריך</dt>
-                <dd className="font-medium">{formatSessionHours(row.instructorHours)}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">שכר בפועל</dt>
-                <dd className="font-medium">{formatCurrency(row.actualInstructorPayout)}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">שכר פוטנציאלי</dt>
-                <dd className="font-medium">{formatCurrency(row.potentialInstructorPayout)}</dd>
-              </div>
+              {moneyColumns.map((col) => (
+                <div key={col.key}>
+                  <dt className="text-muted-foreground">{col.label}</dt>
+                  <dd className="font-medium">{formatCurrency(row[col.key])}</dd>
+                </div>
+              ))}
             </dl>
           </li>
         ))}
       </ul>
 
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block">
-        <table className="app-table w-full min-w-[880px] text-sm">
+        <table className="app-table w-full min-w-[960px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 font-medium text-muted-foreground">מדריך</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">כמות מפגשים</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">בוצעו</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">בוטלו</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">ממתינים לאישור</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">שעות מדריך</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">שכר בפועל</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">שכר פוטנציאלי</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">מפגשים שבוצעו</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">סה״כ שעות</th>
+              {moneyColumns.map((col) => (
+                <th key={col.key} className="px-4 py-3 font-medium text-muted-foreground">
+                  {col.label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.instructorId} className="border-b border-border last:border-b-0">
-                <td className="px-4 py-3 font-medium text-foreground">{row.instructorName}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.sessionCount}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.completedCount}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.cancelledCount}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.pendingApprovalCount}</td>
+              <tr key={row.id} className="border-b border-border last:border-b-0">
+                <td className="px-4 py-3 font-medium text-foreground">{row.name}</td>
+                <td className="px-4 py-3 text-muted-foreground">{row.completedSessionCount}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatSessionHours(row.instructorHours)}
+                  {formatSessionHours(row.totalHours)}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.actualInstructorPayout)}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.potentialInstructorPayout)}
-                </td>
+                {moneyColumns.map((col) => (
+                  <td key={col.key} className="px-4 py-3 text-muted-foreground">
+                    {formatCurrency(row[col.key])}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

@@ -1,22 +1,19 @@
-import {
-  formatMonthParam,
-  shiftMonthView,
-  type MonthView,
-} from "@/components/calendar/month-calendar-utils";
+import type { PartnerReportDateRange } from "@/lib/reports/partner-report-types";
 
 export type ReportSearchParams = {
-  month?: string;
+  from?: string;
+  to?: string;
   filterInstructor?: string;
   filterInstitution?: string;
-  filterStatus?: string;
 };
 
 export function buildReportsUrl(
-  monthView: MonthView,
+  dateRange: PartnerReportDateRange,
   searchParams?: ReportSearchParams,
 ): string {
   const params = new URLSearchParams();
-  params.set("month", formatMonthParam(monthView));
+  params.set("from", dateRange.from);
+  params.set("to", dateRange.to);
 
   if (searchParams?.filterInstructor) {
     params.set("filterInstructor", searchParams.filterInstructor);
@@ -26,21 +23,5 @@ export function buildReportsUrl(
     params.set("filterInstitution", searchParams.filterInstitution);
   }
 
-  if (searchParams?.filterStatus) {
-    params.set("filterStatus", searchParams.filterStatus);
-  }
-
-  const query = params.toString();
-
-  return query ? `/reports?${query}` : "/reports";
-}
-
-export function buildReportsMonthNavUrls(
-  monthView: MonthView,
-  searchParams?: ReportSearchParams,
-): { previousHref: string; nextHref: string } {
-  return {
-    previousHref: buildReportsUrl(shiftMonthView(monthView, -1), searchParams),
-    nextHref: buildReportsUrl(shiftMonthView(monthView, 1), searchParams),
-  };
+  return `/reports?${params.toString()}`;
 }

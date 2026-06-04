@@ -1,9 +1,9 @@
 import { formatSessionHours } from "@/components/sessions/format";
 import { formatCurrency } from "@/lib/financial/format-currency";
-import type { InstitutionReportRow } from "@/lib/reports/types";
+import type { PartnerReportEntityRow } from "@/lib/reports/partner-report-types";
 
 type ReportsInstitutionTableProps = {
-  rows: InstitutionReportRow[];
+  rows: PartnerReportEntityRow[];
 };
 
 function EmptyState({ message }: { message: string }) {
@@ -14,9 +14,16 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+const moneyColumns = [
+  { key: "grossRevenue" as const, label: "תקבול ברוטו" },
+  { key: "vat" as const, label: "מע״מ" },
+  { key: "instructorCost" as const, label: "עלות מדריכים" },
+  { key: "grossProfit" as const, label: "רווח גולמי" },
+];
+
 export function ReportsInstitutionTable({ rows }: ReportsInstitutionTableProps) {
   if (rows.length === 0) {
-    return <EmptyState message="אין נתוני מוסדות לחודש הנבחר." />;
+    return <EmptyState message="אין מפגשים שבוצעו בטווח התאריכים שנבחר." />;
   }
 
   return (
@@ -26,73 +33,57 @@ export function ReportsInstitutionTable({ rows }: ReportsInstitutionTableProps) 
       <ul className="space-y-3 md:hidden">
         {rows.map((row) => (
           <li
-            key={row.institutionId}
+            key={row.id}
             className="rounded-xl border border-border bg-surface p-4 text-center"
           >
-            <p className="font-semibold text-foreground">{row.institutionName}</p>
+            <p className="font-semibold text-foreground">{row.name}</p>
             <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
               <div>
-                <dt className="text-muted-foreground">כמות מפגשים</dt>
-                <dd className="font-medium">{row.sessionCount}</dd>
+                <dt className="text-muted-foreground">מפגשים שבוצעו</dt>
+                <dd className="font-medium">{row.completedSessionCount}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">בוצעו</dt>
-                <dd className="font-medium">{row.completedCount}</dd>
+                <dt className="text-muted-foreground">סה״כ שעות</dt>
+                <dd className="font-medium">{formatSessionHours(row.totalHours)}</dd>
               </div>
-              <div>
-                <dt className="text-muted-foreground">בוטלו</dt>
-                <dd className="font-medium">{row.cancelledCount}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">שעות מדריך</dt>
-                <dd className="font-medium">{formatSessionHours(row.instructorHours)}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">תקבול ברוטו</dt>
-                <dd className="font-medium">{formatCurrency(row.actualGrossRevenue)}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">רווח נקי</dt>
-                <dd className="font-medium">{formatCurrency(row.actualNetProfit)}</dd>
-              </div>
+              {moneyColumns.map((col) => (
+                <div key={col.key}>
+                  <dt className="text-muted-foreground">{col.label}</dt>
+                  <dd className="font-medium">{formatCurrency(row[col.key])}</dd>
+                </div>
+              ))}
             </dl>
           </li>
         ))}
       </ul>
 
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block">
-        <table className="app-table w-full min-w-[760px] text-sm">
+        <table className="app-table w-full min-w-[960px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 font-medium text-muted-foreground">מוסד</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">כמות מפגשים</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">בוצעו</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">בוטלו</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">תקבול ברוטו</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">מע״מ</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">תקבול נטו</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">רווח נקי</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">מפגשים שבוצעו</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">סה״כ שעות</th>
+              {moneyColumns.map((col) => (
+                <th key={col.key} className="px-4 py-3 font-medium text-muted-foreground">
+                  {col.label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.institutionId} className="border-b border-border last:border-b-0">
-                <td className="px-4 py-3 font-medium text-foreground">{row.institutionName}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.sessionCount}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.completedCount}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.cancelledCount}</td>
+              <tr key={row.id} className="border-b border-border last:border-b-0">
+                <td className="px-4 py-3 font-medium text-foreground">{row.name}</td>
+                <td className="px-4 py-3 text-muted-foreground">{row.completedSessionCount}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.actualGrossRevenue)}
+                  {formatSessionHours(row.totalHours)}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.actualVatAmount)}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.actualNetRevenueBeforeInstructor)}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {formatCurrency(row.actualNetProfit)}
-                </td>
+                {moneyColumns.map((col) => (
+                  <td key={col.key} className="px-4 py-3 text-muted-foreground">
+                    {formatCurrency(row[col.key])}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

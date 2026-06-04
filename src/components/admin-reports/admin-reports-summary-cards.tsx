@@ -1,20 +1,12 @@
 import { formatSessionHours } from "@/components/sessions/format";
 import { resolveAdminReportKind } from "@/lib/admin-reports/report-type";
-import type { AdminReportData, AdminReportSummary } from "@/lib/admin-reports/types";
+import type { AdminReportData } from "@/lib/admin-reports/types";
 import { formatCurrency } from "@/lib/financial/format-currency";
 
 type AdminReportsSummaryCardsProps = {
   report: AdminReportData;
   variant?: "screen" | "print";
 };
-
-function instructorHourlyRate(summary: AdminReportSummary): string {
-  if (summary.instructorHours <= 0) {
-    return "—";
-  }
-
-  return formatCurrency(summary.totalInstructorPayout / summary.instructorHours);
-}
 
 function uniqueInstitutionNames(rows: AdminReportData["rows"]): string {
   const names = Array.from(
@@ -40,7 +32,6 @@ export function AdminReportsSummaryCards({
       { title: "טווח תאריכים", value: filterLabels.dateRangeLabel },
       { title: "סה״כ מפגשים", value: String(summary.totalSessions) },
       { title: "סה״כ שעות מדריך", value: formatSessionHours(summary.instructorHours) },
-      { title: "תעריף מדריך (ממוצע)", value: instructorHourlyRate(summary) },
       { title: "סה״כ לתשלום", value: formatCurrency(summary.totalInstructorPayout) },
     ];
 

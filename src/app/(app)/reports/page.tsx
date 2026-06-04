@@ -1,61 +1,55 @@
 import Link from "next/link";
 
-import { parseMonthParam, formatMonthLabel, formatMonthParam } from "@/components/calendar/month-calendar-utils";
-import { ReportsCourseTable } from "@/components/reports/reports-course-table";
+import { ReportsDateRangeFilter } from "@/components/reports/reports-date-range-filter";
 import { ReportsExportToolbar } from "@/components/reports/reports-export-toolbar";
 import { ReportsFilters } from "@/components/reports/reports-filters";
+import { ReportsFinancialSummaryCards } from "@/components/reports/reports-financial-summary-cards";
 import { ReportsInstitutionTable } from "@/components/reports/reports-institution-table";
 import { ReportsInstructorTable } from "@/components/reports/reports-instructor-table";
-import { ReportsMonthSelector } from "@/components/reports/reports-month-selector";
-import { ReportsFinancialSummaryCards } from "@/components/reports/reports-financial-summary-cards";
-import { ReportsSummaryCards } from "@/components/reports/reports-summary-cards";
 import { Container } from "@/components/ui/container";
 import { requireAdmin } from "@/lib/auth/guards";
-import { buildMonthlyReportDataFromFinancial } from "@/lib/reports/build-financial-report";
-import { applyReportFilters, parseReportFilters } from "@/lib/reports/report-filters";
+import { buildPartnerFinancialReport } from "@/lib/reports/build-partner-financial-report";
+import {
+  getPartnerReportFilterOptions,
+  getPartnerReportSessions,
+} from "@/lib/reports/get-partner-report-sessions";
+import { formatReportRangeLabel, parseReportDateRange } from "@/lib/reports/report-date-range";
 import type { ReportSearchParams } from "@/lib/reports/report-url";
-import { getFinancialSessionsForMonth } from "@/lib/financial/get-financial-sessions";
-import { getMonthlyReportSessions } from "@/lib/reports/get-monthly-report-data";
 
 type ReportsPageProps = {
   searchParams?: ReportSearchParams;
 };
 
+function filterSessions(
+  sessions: Awaited<ReturnType<typeof getPartnerReportSessions>>,
+  searchParams?: ReportSearchParams,
+) {
+  let filtered = sessions;
+
+  if (searchParams?.filterInstructor) {
+    filtered = filtered.filter((s) => s.instructor_id === searchParams.filterInstructor);
+  }
+
+  if (searchParams?.filterInstitution) {
+    filtered = filtered.filter((s) => s.institution_id === searchParams.filterInstitution);
+  }
+
+  return filtered;
+}
+
 export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   await requireAdmin();
 
-  const monthView = parseMonthParam(searchParams?.month);
-  const monthLabel = formatMonthLabel(monthView);
-  const monthParam = formatMonthParam(monthView);
-  const filters = parseReportFilters(searchParams);
+  const dateRange = parseReportDateRange(searchParams?.from, searchParams?.to);
+  const rangeLabel = formatReportRangeLabel(dateRange);
 
-  const [{ filterOptions }, financialRecords] = await Promise.all([
-    getMonthlyReportSessions(monthView),
-    getFinancialSessionsForMonth(monthView),
+  const [filterOptions, sessions] = await Promise.all([
+    getPartnerReportFilterOptions(),
+    getPartnerReportSessions(dateRange.from, dateRange.to),
   ]);
 
-  const filterableSessions = financialRecords.map((record) => ({
-    id: record.id,
-    status: record.status,
-    instructor_hours: record.instructor_hours,
-    company_hours: record.company_hours,
-    instructor_id: record.instructor_id,
-    instructor_name: record.instructor_name,
-    institution_id: record.institution_id,
-    institution_name: record.institution_name,
-    course_id: record.course_id,
-    course_name: record.course_name,
-    course_status: "active" as const,
-  }));
-
-  const filteredIds = new Set(
-    applyReportFilters(filterableSessions, filters).map((session) => session.id),
-  );
-  const filteredFinancialRecords = financialRecords.filter((record) =>
-    filteredIds.has(record.id),
-  );
-
-  const report = buildMonthlyReportDataFromFinancial(filteredFinancialRecords);
+  const filteredSessions = filterSessions(sessions, searchParams);
+  const report = buildPartnerFinancialReport(dateRange, filteredSessions);
 
   return (
     <Container as="main" className="flex flex-1 flex-col gap-6 py-8 print:py-4">
@@ -66,32 +60,31 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
         >
           חזרה לדשבורד
         </Link>
-        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">דוחות</h1>
+        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">דוחות כספיים</h1>
         <p className="text-sm text-muted-foreground sm:text-base">
-          סקירה חודשית של פעילות המפגשים — {monthLabel}
+          דוח רווח לפי טווח תאריכים — מפגשים שבוצעו בלבד · {rangeLabel}
         </p>
       </header>
 
       <div className="hidden print:block print:mb-4 print:text-start">
-        <h1 className="text-xl font-bold text-foreground">דוח חודשי — {monthLabel}</h1>
+        <h1 className="text-xl font-bold text-foreground">דוח כספי — {rangeLabel}</h1>
+        <p className="text-sm text-muted-foreground">מפגשים שבוצעו בלבד</p>
       </div>
 
-      <ReportsMonthSelector monthView={monthView} searchParams={searchParams} />
+      <ReportsDateRangeFilter dateRange={dateRange} searchParams={searchParams} />
 
       <ReportsFilters
-        monthView={monthView}
+        dateRange={dateRange}
         searchParams={searchParams}
         filterOptions={filterOptions}
       />
 
-      <ReportsExportToolbar report={report} monthLabel={monthLabel} monthParam={monthParam} />
+      <ReportsExportToolbar report={report} rangeLabel={rangeLabel} />
 
       <div id="reports-print-area" className="space-y-8 print:space-y-6">
-        <ReportsSummaryCards summary={report.summary} />
-        <ReportsFinancialSummaryCards financial={report.summary.financial} />
+        <ReportsFinancialSummaryCards report={report} />
         <ReportsInstructorTable rows={report.instructorRows} />
         <ReportsInstitutionTable rows={report.institutionRows} />
-        <ReportsCourseTable rows={report.courseRows} />
       </div>
     </Container>
   );

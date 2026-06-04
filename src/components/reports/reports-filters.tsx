@@ -3,18 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import {
-  formatMonthParam,
-  type MonthView,
-} from "@/components/calendar/month-calendar-utils";
-import { ADMIN_STATUS_OPTIONS, SESSION_STATUS_LABELS } from "@/components/sessions/constants";
 import { buildReportsUrl, type ReportSearchParams } from "@/lib/reports/report-url";
-import type { ReportFilterOptions } from "@/lib/reports/types";
+import type { PartnerReportDateRange } from "@/lib/reports/partner-report-types";
+import type { PartnerReportFilterOptions } from "@/lib/reports/partner-report-types";
 
 type ReportsFiltersProps = {
-  monthView: MonthView;
+  dateRange: PartnerReportDateRange;
   searchParams?: ReportSearchParams;
-  filterOptions: ReportFilterOptions;
+  filterOptions: PartnerReportFilterOptions;
 };
 
 const selectClassName =
@@ -24,16 +20,18 @@ const navButtonClassName =
   "inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted";
 
 export function ReportsFilters({
-  monthView,
+  dateRange,
   searchParams,
   filterOptions,
 }: ReportsFiltersProps) {
   const router = useRouter();
 
-  function updateFilter(key: keyof ReportSearchParams, value: string) {
+  function updateFilter(key: "filterInstructor" | "filterInstitution", value: string) {
     const next: ReportSearchParams = {
-      ...searchParams,
-      month: formatMonthParam(monthView),
+      from: dateRange.from,
+      to: dateRange.to,
+      filterInstructor: searchParams?.filterInstructor,
+      filterInstitution: searchParams?.filterInstitution,
     };
 
     if (value) {
@@ -42,15 +40,15 @@ export function ReportsFilters({
       delete next[key];
     }
 
-    router.push(buildReportsUrl(monthView, next));
+    router.push(buildReportsUrl(dateRange, next));
   }
 
-  const clearHref = buildReportsUrl(monthView, { month: formatMonthParam(monthView) });
+  const clearHref = buildReportsUrl(dateRange);
 
   return (
     <section
       aria-label="סינון דוח"
-      className="grid gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4 print:hidden"
+      className="grid gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-3 print:hidden"
     >
       <label className="space-y-1 text-start">
         <span className="text-xs font-medium text-muted-foreground">מדריך</span>
@@ -84,23 +82,7 @@ export function ReportsFilters({
         </select>
       </label>
 
-      <label className="space-y-1 text-start">
-        <span className="text-xs font-medium text-muted-foreground">סטטוס מפגש</span>
-        <select
-          value={searchParams?.filterStatus ?? ""}
-          onChange={(event) => updateFilter("filterStatus", event.target.value)}
-          className={selectClassName}
-        >
-          <option value="">הכל</option>
-          {ADMIN_STATUS_OPTIONS.map((item) => (
-            <option key={item.value} value={item.value}>
-              {SESSION_STATUS_LABELS[item.value]}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className="flex items-end sm:col-span-2 lg:col-span-1">
+      <div className="flex items-end">
         <Link href={clearHref} className={`${navButtonClassName} w-full sm:w-auto`}>
           ניקוי סינון
         </Link>

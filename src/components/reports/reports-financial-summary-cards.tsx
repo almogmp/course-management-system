@@ -1,30 +1,27 @@
 import { formatCurrency } from "@/lib/financial/format-currency";
-import type { ReportFinancialSummary } from "@/lib/reports/types";
+import type { PartnerFinancialReport } from "@/lib/reports/partner-report-types";
 
 type ReportsFinancialSummaryCardsProps = {
-  financial: ReportFinancialSummary;
+  report: PartnerFinancialReport;
 };
 
-export function ReportsFinancialSummaryCards({ financial }: ReportsFinancialSummaryCardsProps) {
+export function ReportsFinancialSummaryCards({ report }: ReportsFinancialSummaryCardsProps) {
+  const { totals } = report;
+
   const cards = [
-    { title: "תקבול ברוטו (בפועל)", value: formatCurrency(financial.actualGrossRevenue) },
-    { title: "תקבול ברוטו (פוטנציאלי)", value: formatCurrency(financial.potentialGrossRevenue) },
-    { title: "מע״מ (בפועל)", value: formatCurrency(financial.actualVatAmount) },
-    {
-      title: "תקבול נטו לפני מדריך (בפועל)",
-      value: formatCurrency(financial.actualNetRevenueBeforeInstructor),
-    },
-    { title: "שכר מדריך (בפועל)", value: formatCurrency(financial.actualInstructorPayout) },
-    { title: "שכר מדריך (פוטנציאלי)", value: formatCurrency(financial.potentialInstructorPayout) },
-    { title: "רווח ברוטו (בפועל)", value: formatCurrency(financial.actualGrossProfit) },
-    { title: "רווח נקי (בפועל)", value: formatCurrency(financial.actualNetProfit) },
-    { title: "רווח נקי (פוטנציאלי)", value: formatCurrency(financial.potentialNetProfit) },
+    { title: "תקבול ברוטו", value: formatCurrency(totals.grossRevenue) },
+    { title: "מע״מ", value: formatCurrency(totals.vat) },
+    { title: "עלות מדריכים", value: formatCurrency(totals.instructorCost) },
+    { title: "רווח גולמי", value: formatCurrency(totals.grossProfit) },
   ] as const;
 
   return (
     <section aria-label="סיכום פיננסי" className="space-y-2">
-      <h2 className="text-lg font-semibold text-foreground">סיכום פיננסי</h2>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <h2 className="text-lg font-semibold text-foreground">סיכום כספי</h2>
+      <p className="text-sm text-muted-foreground">
+        מפגשים שבוצעו בלבד · {totals.completedSessionCount} מפגשים
+      </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
           <article
             key={card.title}

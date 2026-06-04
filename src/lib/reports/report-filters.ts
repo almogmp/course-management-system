@@ -12,7 +12,6 @@ export function parseReportFilters(searchParams?: ReportSearchParams): ReportFil
   return {
     instructorId: searchParams?.filterInstructor || undefined,
     institutionId: searchParams?.filterInstitution || undefined,
-    status: (searchParams?.filterStatus as SessionStatus | undefined) || undefined,
   };
 }
 

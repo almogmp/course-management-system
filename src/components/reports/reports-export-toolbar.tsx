@@ -1,25 +1,25 @@
 "use client";
 
-import { buildMonthlyReportCsv, downloadCsvFile } from "@/lib/reports/csv-export";
-import type { MonthlyReportData } from "@/lib/reports/types";
+import {
+  buildPartnerReportCsv,
+  downloadCsvFile,
+} from "@/lib/reports/partner-csv-export";
+import type { PartnerFinancialReport } from "@/lib/reports/partner-report-types";
 
 type ReportsExportToolbarProps = {
-  report: MonthlyReportData;
-  monthLabel: string;
-  monthParam: string;
+  report: PartnerFinancialReport;
+  rangeLabel: string;
 };
 
 const buttonClassName =
   "inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60";
 
-export function ReportsExportToolbar({
-  report,
-  monthLabel,
-  monthParam,
-}: ReportsExportToolbarProps) {
+export function ReportsExportToolbar({ report, rangeLabel }: ReportsExportToolbarProps) {
   function handleCsvExport() {
-    const content = buildMonthlyReportCsv(report, monthLabel);
-    downloadCsvFile(`report-${monthParam}.csv`, content);
+    const content = buildPartnerReportCsv(report, rangeLabel);
+    const safeFrom = report.dateRange.from.replace(/-/g, "");
+    const safeTo = report.dateRange.to.replace(/-/g, "");
+    downloadCsvFile(`financial-report-${safeFrom}-${safeTo}.csv`, content);
   }
 
   function handlePrint() {
