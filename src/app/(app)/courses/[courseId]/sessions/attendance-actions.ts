@@ -97,6 +97,86 @@ function buildSimpleStatusPayload(
   return payload;
 }
 
+const NO_ROWS_UPDATED_ERROR =
+  "עדכון הסטטוס לא בוצע במסד הנתונים. ייתכן שאין הרשאה או שהמפגש לא נמצא.";
+
+async function persistSessionStatusUpdate(input: {
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
+  courseId: string;
+  sessionId: string;
+  userId: string;
+  previousStatus: string;
+  targetStatus: SessionStatus;
+  payload: Database["public"]["Tables"]["sessions"]["Update"];
+  role: "admin" | "instructor";
+}): Promise<SessionStatusActionResult> {
+  console.error("[sessionStatusUpdate] before", {
+    sessionId: input.sessionId,
+    courseId: input.courseId,
+    userId: input.userId,
+    role: input.role,
+    currentStatus: input.previousStatus,
+    targetStatus: input.targetStatus,
+  });
+
+  const { error } = await input.supabase
+    .from("sessions")
+    .update(input.payload)
+    .eq("id", input.sessionId)
+    .eq("course_id", input.courseId);
+
+  if (error) {
+    console.error("[sessionStatusUpdate] error", {
+      sessionId: input.sessionId,
+      message: error.message,
+    });
+    return mapUpdateError(error);
+  }
+
+  const verifyClient = input.supabase as unknown as typeof input.supabase & {
+    from: (relation: string) => ReturnType<typeof input.supabase.from>;
+  };
+
+  const verifySource =
+    input.role === "instructor" ? "instructor_sessions" : "sessions";
+
+  const { data: verifiedRow, error: verifyError } = await (
+    input.role === "instructor" ? verifyClient : input.supabase
+  )
+    .from(verifySource)
+    .select("status")
+    .eq("id", input.sessionId)
+    .eq("course_id", input.courseId)
+    .maybeSingle();
+
+  const verifiedStatus = (verifiedRow as { status?: string } | null)?.status ?? null;
+
+  console.error("[sessionStatusUpdate] after", {
+    sessionId: input.sessionId,
+    verifySource,
+    verifyError: verifyError?.message ?? null,
+    verifiedStatus,
+    targetStatus: input.targetStatus,
+  });
+
+  if (verifyError) {
+    return mapUpdateError(verifyError);
+  }
+
+  if (!verifiedRow) {
+    return sessionStatusFailure(NO_ROWS_UPDATED_ERROR);
+  }
+
+  if (verifiedStatus !== input.targetStatus) {
+    return sessionStatusFailure(
+      "הסטטוס לא נשמר כמצופה. נסה שוב או פנה למנהל המערכת.",
+    );
+  }
+
+  revalidateSessionPaths(input.courseId);
+  return sessionStatusSuccess(SESSION_ACTION_SUCCESS.status);
+}
+
 /** מתוכנן / בוצע / בוטל — מנהל בכל זמן; מדריך רק אחרי שעת התחלה ובמפגש משויך. */
 export async function updateSimpleSessionStatusAction(
   courseId: string,
@@ -124,7 +204,7 @@ export async function updateSimpleSessionStatusAction(
       const { data: existing, error: fetchError } = await supabase
         .from("sessions")
         .select(
-          "cancellation_reason, actual_arrival_time, actual_start_time, actual_end_time",
+          "status, cancellation_reason, actual_arrival_time, actual_start_time, actual_end_time",
         )
         .eq("id", sessionId)
         .eq("course_id", courseId)
@@ -140,18 +220,16 @@ export async function updateSimpleSessionStatusAction(
 
       const payload = buildSimpleStatusPayload(status, existing, { asAdmin: true });
 
-      const { error } = await supabase
-        .from("sessions")
-        .update(payload)
-        .eq("id", sessionId)
-        .eq("course_id", courseId);
-
-      if (error) {
-        return mapUpdateError(error);
-      }
-
-      revalidateSessionPaths(courseId);
-      return sessionStatusSuccess(SESSION_ACTION_SUCCESS.status);
+      return persistSessionStatusUpdate({
+        supabase,
+        courseId,
+        sessionId,
+        userId: auth.userId,
+        previousStatus: existing.status,
+        targetStatus: status,
+        payload,
+        role: "admin",
+      });
     }
 
     const instructorId = await getCurrentInstructorId();
@@ -202,14 +280,16 @@ export async function updateSimpleSessionStatusAction(
 
     const payload = buildSimpleStatusPayload(status, existing, { asAdmin: false });
 
-    const { error } = await supabase.from("sessions").update(payload).eq("id", sessionId);
-
-    if (error) {
-      return mapUpdateError(error);
-    }
-
-    revalidateSessionPaths(courseId);
-    return sessionStatusSuccess(SESSION_ACTION_SUCCESS.status);
+    return persistSessionStatusUpdate({
+      supabase,
+      courseId,
+      sessionId,
+      userId: auth.userId,
+      previousStatus: existing.status,
+      targetStatus: status,
+      payload,
+      role: "instructor",
+    });
   } catch (unknown) {
     console.error("[updateSimpleSessionStatusAction]", unknown);
     return sessionStatusFailure(STATUS_UPDATE_GENERIC_ERROR);

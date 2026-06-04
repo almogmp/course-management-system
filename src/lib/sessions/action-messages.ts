@@ -13,7 +13,7 @@ const ERROR_PATTERNS: Array<{ pattern: RegExp; message: string }> = [
   },
   {
     pattern: /Cannot mark completed before session end/i,
-    message: "לא ניתן לסמן כבוצע לפני סיום זמן המפגש.",
+    message: "לא ניתן לסמן כבוצע לפני סיום זמן המפגש. יש להחיל את מיגרציית הסטטוס העדכנית.",
   },
   {
     pattern: /Cancellation can only be requested from planned/i,

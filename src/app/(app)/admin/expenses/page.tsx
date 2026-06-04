@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { createExpenseAction } from "@/app/(app)/admin/expenses/actions";
-import { parseMonthParam } from "@/components/calendar/month-calendar-utils";
 import { ExpensesSummary } from "@/components/admin-expenses/expenses-summary";
 import { ExpensesTable } from "@/components/admin-expenses/expenses-table";
 import { Container } from "@/components/ui/container";
@@ -14,11 +13,11 @@ import {
   isExpensePaidBy,
 } from "@/lib/expenses/constants";
 import { getExpensesPageData } from "@/lib/expenses/get-expenses";
-import { getMonthBounds } from "@/lib/dashboard/month-bounds";
 
 type AdminExpensesPageProps = {
   searchParams?: {
-    month?: string;
+    from?: string;
+    to?: string;
     paidBy?: string;
     category?: string;
     success?: string;
@@ -32,16 +31,17 @@ const inputClassName =
 export default async function AdminExpensesPage({ searchParams }: AdminExpensesPageProps) {
   await requireAdmin();
 
-  const monthView = parseMonthParam(searchParams?.month);
-  const monthBounds = getMonthBounds(monthView);
-  const monthParam = `${monthView.year}-${String(monthView.month).padStart(2, "0")}`;
-
   const paidByRaw = String(searchParams?.paidBy ?? "").trim();
   const categoryRaw = String(searchParams?.category ?? "").trim();
   const paidBy = paidByRaw && isExpensePaidBy(paidByRaw) ? paidByRaw : undefined;
   const category = categoryRaw && isExpenseCategory(categoryRaw) ? categoryRaw : undefined;
 
-  const page = await getExpensesPageData({ month: monthParam, paidBy, category });
+  const page = await getExpensesPageData({
+    from: searchParams?.from,
+    to: searchParams?.to,
+    paidBy,
+    category,
+  });
 
   const successMessage =
     searchParams?.success === "created"
@@ -80,17 +80,30 @@ export default async function AdminExpensesPage({ searchParams }: AdminExpensesP
         </p>
       ) : null}
 
-      <section className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+      <section className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
         <form method="get" className="contents">
           <div className="space-y-2">
-            <label htmlFor="expenses-month" className="block text-sm font-medium text-foreground">
-              חודש
+            <label htmlFor="expenses-from" className="block text-sm font-medium text-foreground">
+              תאריך התחלה
             </label>
             <input
-              id="expenses-month"
-              name="month"
-              type="month"
-              defaultValue={monthParam}
+              id="expenses-from"
+              name="from"
+              type="date"
+              defaultValue={page.range.from}
+              dir="ltr"
+              className={inputClassName}
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="expenses-to" className="block text-sm font-medium text-foreground">
+              תאריך סיום
+            </label>
+            <input
+              id="expenses-to"
+              name="to"
+              type="date"
+              defaultValue={page.range.to}
               dir="ltr"
               className={inputClassName}
             />
@@ -136,7 +149,7 @@ export default async function AdminExpensesPage({ searchParams }: AdminExpensesP
               סינון
             </Button>
             <Link
-              href={`/admin/expenses?month=${monthParam}`}
+              href="/admin/expenses"
               className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
             >
               ניקוי
@@ -148,7 +161,10 @@ export default async function AdminExpensesPage({ searchParams }: AdminExpensesP
       <section className="rounded-xl border border-border bg-surface p-4 sm:p-6">
         <h2 className="mb-4 text-lg font-semibold text-foreground">הוספת הוצאה</h2>
         <form action={createExpenseAction} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
-          <input type="hidden" name="month" value={monthParam} />
+          <input type="hidden" name="filter_from" value={page.range.from} />
+          <input type="hidden" name="filter_to" value={page.range.to} />
+          {paidBy ? <input type="hidden" name="filter_paidBy" value={paidBy} /> : null}
+          {category ? <input type="hidden" name="filter_category" value={category} /> : null}
           <div className="space-y-2">
             <label htmlFor="expense-date" className="block text-sm font-medium text-foreground">
               תאריך
@@ -158,7 +174,7 @@ export default async function AdminExpensesPage({ searchParams }: AdminExpensesP
               name="expense_date"
               type="date"
               required
-              defaultValue={monthBounds.startDate}
+              defaultValue={page.range.to}
               dir="ltr"
               className={inputClassName}
             />
@@ -216,9 +232,14 @@ export default async function AdminExpensesPage({ searchParams }: AdminExpensesP
         </form>
       </section>
 
-      <ExpensesSummary rows={page.rows} />
-      <ExpensesTable rows={page.rows} monthParam={monthParam} />
+      <ExpensesSummary rows={page.rows} rangeLabel={page.rangeLabel} />
+      <ExpensesTable
+        rows={page.rows}
+        range={page.range}
+        paidBy={paidBy}
+        category={category}
+        rangeLabel={page.rangeLabel}
+      />
     </Container>
   );
 }
-

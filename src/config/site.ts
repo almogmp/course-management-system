@@ -25,8 +25,8 @@ export const defaultMetadata: Metadata = {
   metadataBase,
   icons: {
     icon: [{ url: "/icon.png", type: "image/png" }],
-    shortcut: "/icon.png",
-    apple: "/icon.png",
+    shortcut: [{ url: "/icon.png", type: "image/png" }],
+    apple: [{ url: "/icon.png", type: "image/png" }],
   },
   openGraph: {
     type: "website",

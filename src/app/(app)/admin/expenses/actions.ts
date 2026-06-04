@@ -8,6 +8,7 @@ import {
   isExpenseCategory,
   isExpensePaidBy,
 } from "@/lib/expenses/constants";
+import { buildExpenseFilterSearchParams, parseExpenseDateRange } from "@/lib/expenses/date-range";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -16,9 +17,24 @@ type ExpenseUpdate = Database["public"]["Tables"]["expenses"]["Update"];
 
 const EXPENSES_PATH = "/admin/expenses";
 
-function redirectWithError(message: string, params?: URLSearchParams) {
-  const base = params ? `${EXPENSES_PATH}?${params.toString()}` : EXPENSES_PATH;
-  redirect(`${base}${base.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
+function filterParamsFromForm(formData: FormData): URLSearchParams {
+  const from = String(formData.get("filter_from") ?? "").trim();
+  const to = String(formData.get("filter_to") ?? "").trim();
+  const paidBy = String(formData.get("filter_paidBy") ?? "").trim();
+  const category = String(formData.get("filter_category") ?? "").trim();
+  const range = parseExpenseDateRange(from || undefined, to || undefined);
+
+  return buildExpenseFilterSearchParams({
+    from: range.from,
+    to: range.to,
+    paidBy: paidBy && isExpensePaidBy(paidBy) ? paidBy : undefined,
+    category: category && isExpenseCategory(category) ? category : undefined,
+  });
+}
+
+function redirectWithError(message: string, params: URLSearchParams) {
+  params.set("error", message);
+  redirect(`${EXPENSES_PATH}?${params.toString()}`);
 }
 
 export async function createExpenseAction(formData: FormData): Promise<void> {
@@ -30,9 +46,7 @@ export async function createExpenseAction(formData: FormData): Promise<void> {
   const amountRaw = String(formData.get("amount") ?? "").trim();
   const paidBy = String(formData.get("paid_by") ?? "").trim();
 
-  const month = String(formData.get("month") ?? "").trim();
-  const params = new URLSearchParams();
-  if (month) params.set("month", month);
+  const params = filterParamsFromForm(formData);
 
   if (!expenseDate) redirectWithError("יש לבחור תאריך.", params);
   if (!description) redirectWithError("יש להזין תיאור.", params);
@@ -57,12 +71,16 @@ export async function createExpenseAction(formData: FormData): Promise<void> {
 
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.from("expenses").insert(payload);
+
   if (error) {
     redirectWithError(error.message, params);
   }
 
+  const redirectParams = filterParamsFromForm(formData);
+  redirectParams.set("success", "created");
+
   revalidatePath(EXPENSES_PATH);
-  redirect(`${EXPENSES_PATH}?${params.toString()}&success=created`);
+  redirect(`${EXPENSES_PATH}?${redirectParams.toString()}`);
 }
 
 export async function updateExpenseAction(expenseId: string, formData: FormData): Promise<void> {
@@ -74,9 +92,7 @@ export async function updateExpenseAction(expenseId: string, formData: FormData)
   const amountRaw = String(formData.get("amount") ?? "").trim();
   const paidBy = String(formData.get("paid_by") ?? "").trim();
 
-  const month = String(formData.get("month") ?? "").trim();
-  const params = new URLSearchParams();
-  if (month) params.set("month", month);
+  const params = filterParamsFromForm(formData);
 
   const amount = Number(amountRaw);
   if (!expenseDate) redirectWithError("יש לבחור תאריך.", params);
@@ -95,27 +111,32 @@ export async function updateExpenseAction(expenseId: string, formData: FormData)
 
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.from("expenses").update(payload).eq("id", expenseId);
+
   if (error) {
     redirectWithError(error.message, params);
   }
 
+  const redirectParams = filterParamsFromForm(formData);
+  redirectParams.set("success", "updated");
+
   revalidatePath(EXPENSES_PATH);
-  redirect(`${EXPENSES_PATH}?${params.toString()}&success=updated`);
+  redirect(`${EXPENSES_PATH}?${redirectParams.toString()}`);
 }
 
-export async function deleteExpenseAction(expenseId: string, month?: string): Promise<void> {
+export async function deleteExpenseAction(expenseId: string, formData: FormData): Promise<void> {
   await requireAdmin();
 
-  const params = new URLSearchParams();
-  if (month) params.set("month", month);
+  const params = filterParamsFromForm(formData);
 
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.from("expenses").delete().eq("id", expenseId);
+
   if (error) {
     redirectWithError(error.message, params);
   }
 
-  revalidatePath(EXPENSES_PATH);
-  redirect(`${EXPENSES_PATH}?${params.toString()}&success=deleted`);
-}
+  params.set("success", "deleted");
 
+  revalidatePath(EXPENSES_PATH);
+  redirect(`${EXPENSES_PATH}?${params.toString()}`);
+}

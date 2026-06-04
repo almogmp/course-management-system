@@ -4,13 +4,14 @@ import { formatCurrency } from "@/lib/financial/format-currency";
 
 type ExpensesSummaryProps = {
   rows: ExpenseRow[];
+  rangeLabel: string;
 };
 
 function sum(rows: ExpenseRow[], predicate: (row: ExpenseRow) => boolean): number {
   return rows.filter(predicate).reduce((acc, row) => acc + Number(row.amount), 0);
 }
 
-export function ExpensesSummary({ rows }: ExpensesSummaryProps) {
+export function ExpensesSummary({ rows, rangeLabel }: ExpensesSummaryProps) {
   const total = rows.reduce((acc, row) => acc + Number(row.amount), 0);
   const byPaidBy = Object.fromEntries(
     EXPENSE_PAID_BY_OPTIONS.map((payer) => [payer, sum(rows, (r) => r.paid_by === payer)]),
@@ -21,6 +22,9 @@ export function ExpensesSummary({ rows }: ExpensesSummaryProps) {
 
   return (
     <section className="space-y-3" aria-label="סיכום הוצאות">
+      <p className="text-sm text-muted-foreground">
+        סיכומים לטווח: <span className="font-medium text-foreground">{rangeLabel}</span>
+      </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <article className="rounded-xl border border-border bg-surface p-4 text-center">
           <h3 className="text-sm font-medium text-muted-foreground">סה״כ הוצאות</h3>
@@ -57,4 +61,3 @@ export function ExpensesSummary({ rows }: ExpensesSummaryProps) {
     </section>
   );
 }
-
