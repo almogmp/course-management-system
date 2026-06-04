@@ -14,7 +14,6 @@ import {
   type SessionsMonthSummary,
 } from "@/lib/sessions/compute-month-summary";
 import { coerceSessionHours } from "@/lib/sessions/coerce-session-hours";
-import { logInstructorSessionsAccess } from "@/lib/sessions/log-instructor-sessions-access";
 import { resolveSessionInstructorDisplayName } from "@/lib/sessions/resolve-instructor-display-name";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
@@ -174,11 +173,6 @@ async function getInstructorSessionsForMonth(
   if (error) {
     throw new Error(error.message);
   }
-
-  await logInstructorSessionsAccess("getInstructorSessionsForMonth", {
-    startDate,
-    endDate,
-  });
 
   const currentInstructorId = await getCurrentInstructorId();
   let selfName = "—";

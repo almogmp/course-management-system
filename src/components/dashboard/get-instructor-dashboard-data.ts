@@ -6,7 +6,6 @@ import {
   type InstructorWorkloadRow,
 } from "@/lib/dashboard/workload";
 import { coerceSessionHours } from "@/lib/sessions/coerce-session-hours";
-import { logInstructorSessionsAccess } from "@/lib/sessions/log-instructor-sessions-access";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 
@@ -72,11 +71,6 @@ async function fetchInstructorSessionsInRange(
   if (error) {
     throw new Error(error.message);
   }
-
-  await logInstructorSessionsAccess("fetchInstructorSessionsInRange", {
-    startDate,
-    endDate,
-  });
 
   const rows = (data ?? []) as InstructorSessionRow[];
 

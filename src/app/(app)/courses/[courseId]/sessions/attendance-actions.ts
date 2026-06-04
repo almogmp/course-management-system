@@ -114,23 +114,6 @@ async function persistInstructorSessionStatusViaRpc(input: {
   previousStatus: string;
   targetStatus: SessionStatus;
 }): Promise<SessionStatusActionResult> {
-  console.log("[sessionStatusUpdate] rpc-called", {
-    sessionId: input.sessionId,
-    courseId: input.courseId,
-    status: input.targetStatus,
-  });
-
-  console.error("[sessionStatusUpdate] before", {
-    sessionId: input.sessionId,
-    courseId: input.courseId,
-    userId: input.userId,
-    instructorId: input.instructorId,
-    role: "instructor",
-    currentStatus: input.previousStatus,
-    targetStatus: input.targetStatus,
-    method: "rpc",
-  });
-
   const { data, error: rpcError } = await input.supabase.rpc("update_instructor_session_status", {
     p_session_id: input.sessionId,
     p_course_id: input.courseId,
@@ -139,19 +122,6 @@ async function persistInstructorSessionStatusViaRpc(input: {
 
   const rows = (data ?? []) as InstructorStatusRpcRow[];
   const updateData = rows[0] ?? null;
-
-  console.error("[sessionStatusUpdate] update", {
-    sessionId: input.sessionId,
-    targetStatus: input.targetStatus,
-    method: "rpc",
-    updateError: rpcError?.message ?? null,
-    updateErrorCode: rpcError?.code ?? null,
-    updateData,
-    updateStatus: updateData?.status ?? null,
-    rowsReturned: rows.length,
-    rlsLikelyBlocked: false,
-    triggerLikelyBlocked: false,
-  });
 
   if (rpcError) {
     return mapUpdateError(rpcError);
@@ -174,15 +144,6 @@ async function persistInstructorSessionStatusViaRpc(input: {
 
   const verifiedStatus =
     (verifiedRow as { status: SessionStatus } | null)?.status ?? null;
-
-  console.error("[sessionStatusUpdate] after", {
-    sessionId: input.sessionId,
-    verifySource: "instructor_sessions",
-    verifyError: verifyError?.message ?? null,
-    verifiedStatus,
-    targetStatus: input.targetStatus,
-    persistedViaRpc: updateData.status,
-  });
 
   if (verifyError) {
     return mapUpdateError(verifyError);
@@ -209,17 +170,6 @@ async function persistSessionStatusUpdate(input: {
   payload: Database["public"]["Tables"]["sessions"]["Update"];
   role: "admin" | "instructor";
 }): Promise<SessionStatusActionResult> {
-  console.error("[sessionStatusUpdate] before", {
-    sessionId: input.sessionId,
-    courseId: input.courseId,
-    userId: input.userId,
-    instructorId: input.instructorId ?? null,
-    role: input.role,
-    currentStatus: input.previousStatus,
-    targetStatus: input.targetStatus,
-    payloadKeys: Object.keys(input.payload),
-  });
-
   const { data: updateData, error: updateError } = await input.supabase
     .from("sessions")
     .update(input.payload)
@@ -227,24 +177,6 @@ async function persistSessionStatusUpdate(input: {
     .eq("course_id", input.courseId)
     .select("id, status")
     .maybeSingle();
-
-  const rowsReturned = updateData ? 1 : 0;
-
-  console.error("[sessionStatusUpdate] update", {
-    sessionId: input.sessionId,
-    targetStatus: input.targetStatus,
-    usedSelect: true,
-    matchedFilters: { id: input.sessionId, course_id: input.courseId },
-    updateError: updateError?.message ?? null,
-    updateErrorCode: updateError?.code ?? null,
-    updateData: updateData ?? null,
-    updateStatus: updateData?.status ?? null,
-    rowsReturned,
-    rlsLikelyBlocked: !updateError && rowsReturned === 0,
-    triggerLikelyBlocked:
-      Boolean(updateError?.message?.includes("Cannot mark completed before session end")) ||
-      Boolean(updateError?.message?.includes("Instructor cannot")),
-  });
 
   if (updateError) {
     return mapUpdateError(updateError);
@@ -266,8 +198,6 @@ async function persistSessionStatusUpdate(input: {
 
   let verifiedStatus: string | null = null;
   let verifyError: { message: string } | null = null;
-  const verifySource =
-    input.role === "instructor" ? "instructor_sessions" : "sessions";
 
   if (input.role === "instructor") {
     const { data: verifiedRow, error } = await verifyClient
@@ -290,15 +220,6 @@ async function persistSessionStatusUpdate(input: {
     verifyError = error;
     verifiedStatus = verifiedRow?.status ?? null;
   }
-
-  console.error("[sessionStatusUpdate] after", {
-    sessionId: input.sessionId,
-    verifySource,
-    verifyError: verifyError?.message ?? null,
-    verifiedStatus,
-    targetStatus: input.targetStatus,
-    persistedViaUpdateReturn: updateData.status,
-  });
 
   if (verifyError) {
     return mapUpdateError(verifyError);
@@ -403,11 +324,6 @@ export async function updateSimpleSessionStatusAction(
     if (!hasSessionStarted(session.session_date, session.start_time)) {
       return sessionStatusFailure(INSTRUCTOR_STATUS_TOO_EARLY_ERROR);
     }
-
-    console.log("[sessionStatusUpdate] path", {
-      role: "instructor",
-      usingRpc: true,
-    });
 
     return persistInstructorSessionStatusViaRpc({
       supabase,

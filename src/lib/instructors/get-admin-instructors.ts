@@ -1,9 +1,6 @@
 import "server-only";
 
-import {
-  adminSelectProfilesByIds,
-  logAdminInstructorsProfileQuery,
-} from "@/lib/admin/admin-profiles-server";
+import { adminSelectProfilesByIds } from "@/lib/admin/admin-profiles-server";
 import { logServerError } from "@/lib/errors/safe-error-message";
 import { tryCreateSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -35,7 +32,6 @@ export async function getAdminInstructors(): Promise<AdminInstructorsLoadResult>
 
   if (!adminResult.ok) {
     logServerError("getAdminInstructors.serviceRole", adminResult.error);
-    logAdminInstructorsProfileQuery("getAdminInstructors", { phase: "no_service_role" }, adminResult.error);
     return { ok: false, error: adminResult.error };
   }
 

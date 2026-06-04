@@ -12,11 +12,7 @@ type AdminInstructorsErrorProps = {
 
 export default function AdminInstructorsError({ error, reset }: AdminInstructorsErrorProps) {
   useEffect(() => {
-    console.error("ADMIN_INSTRUCTORS_PROFILE_QUERY", {
-      context: "AdminInstructorsError",
-      message: error.message,
-      digest: error.digest,
-    });
+    console.error(error);
   }, [error]);
 
   return (

@@ -19,23 +19,6 @@ type ProfileSelectColumns = "id, email, role, approval_status";
 
 const PROFILE_COLUMNS = "id, email, role, approval_status" satisfies ProfileSelectColumns;
 
-/** Temporary production debugging — every profiles read on admin instructors flow. */
-export function logAdminInstructorsProfileQuery(
-  context: string,
-  details: Record<string, unknown>,
-  error?: unknown,
-): void {
-  console.error("ADMIN_INSTRUCTORS_PROFILE_QUERY", {
-    context,
-    client: "service_role",
-    ...details,
-    error:
-      error instanceof Error
-        ? { message: error.message, name: error.name }
-        : error ?? null,
-  });
-}
-
 function authProfileFromRow(row: ProfileRow): AuthProfileShape {
   return {
     role: row.role,
@@ -58,7 +41,6 @@ export async function adminSelectProfilesByIds(
   const adminResult = tryCreateSupabaseAdminClient();
 
   if (!adminResult.ok) {
-    logAdminInstructorsProfileQuery(context, { userIds, phase: "client" }, adminResult.error);
     return { ok: false, error: adminResult.error };
   }
 
@@ -68,11 +50,9 @@ export async function adminSelectProfilesByIds(
     .in("id", userIds);
 
   if (error) {
-    logAdminInstructorsProfileQuery(context, { userIds, phase: "query" }, error);
     return { ok: false, error: error.message };
   }
 
-  logAdminInstructorsProfileQuery(context, { userIds, rowCount: data?.length ?? 0, phase: "ok" });
   return { ok: true, profiles: (data ?? []) as ProfileRow[] };
 }
 
@@ -84,7 +64,6 @@ export async function adminSelectProfilesByRole(
   const adminResult = tryCreateSupabaseAdminClient();
 
   if (!adminResult.ok) {
-    logAdminInstructorsProfileQuery(context, { role, phase: "client" }, adminResult.error);
     return { ok: false, error: adminResult.error };
   }
 
@@ -97,11 +76,9 @@ export async function adminSelectProfilesByRole(
   const { data, error } = await query.order("email");
 
   if (error) {
-    logAdminInstructorsProfileQuery(context, { role, phase: "query" }, error);
     return { ok: false, error: error.message };
   }
 
-  logAdminInstructorsProfileQuery(context, { role, rowCount: data?.length ?? 0, phase: "ok" });
   return { ok: true, profiles: (data ?? []) as ProfileRow[] };
 }
 
@@ -117,7 +94,6 @@ export async function adminSelectOwnProfile(
 
   if (!result.ok) {
     if (userEmail && isAdminEmail(userEmail)) {
-      logAdminInstructorsProfileQuery(context, { userId, fallback: "config_admin_email" });
       return { role: "admin", approval_status: "approved" };
     }
 
@@ -128,7 +104,6 @@ export async function adminSelectOwnProfile(
 
   if (!row) {
     if (userEmail && isAdminEmail(userEmail)) {
-      logAdminInstructorsProfileQuery(context, { userId, fallback: "config_admin_email_no_row" });
       return { role: "admin", approval_status: "approved" };
     }
 
@@ -146,17 +121,14 @@ export async function adminUpdateProfile(
   const adminResult = tryCreateSupabaseAdminClient();
 
   if (!adminResult.ok) {
-    logAdminInstructorsProfileQuery(context, { userId, phase: "update_client" }, adminResult.error);
     return { ok: false, error: adminResult.error };
   }
 
   const { error } = await adminResult.client.from("profiles").update(patch).eq("id", userId);
 
   if (error) {
-    logAdminInstructorsProfileQuery(context, { userId, phase: "update" }, error);
     return { ok: false, error: error.message };
   }
 
-  logAdminInstructorsProfileQuery(context, { userId, phase: "update_ok" });
   return { ok: true };
 }

@@ -20,13 +20,6 @@ export async function getProfileForAdminMiddleware(
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
   if (!serviceRoleKey) {
-    console.error("ADMIN_INSTRUCTORS_PROFILE_QUERY", {
-      context: "middleware.getProfileForAdminMiddleware",
-      client: "none",
-      error: "missing_service_role_key",
-      userId,
-    });
-
     if (userEmail && isAdminEmail(userEmail)) {
       return { role: "admin", approval_status: "approved" };
     }
@@ -46,13 +39,6 @@ export async function getProfileForAdminMiddleware(
     .maybeSingle();
 
   if (error) {
-    console.error("ADMIN_INSTRUCTORS_PROFILE_QUERY", {
-      context: "middleware.getProfileForAdminMiddleware",
-      client: "service_role",
-      userId,
-      error: { message: error.message },
-    });
-
     if (userEmail && isAdminEmail(userEmail)) {
       return { role: "admin", approval_status: "approved" };
     }
@@ -67,14 +53,6 @@ export async function getProfileForAdminMiddleware(
 
     return null;
   }
-
-  console.error("ADMIN_INSTRUCTORS_PROFILE_QUERY", {
-    context: "middleware.getProfileForAdminMiddleware",
-    client: "service_role",
-    userId,
-    phase: "ok",
-    role: data.role,
-  });
 
   return data;
 }
