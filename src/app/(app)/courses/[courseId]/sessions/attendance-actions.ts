@@ -98,13 +98,14 @@ function buildSimpleStatusPayload(
 }
 
 const NO_ROWS_UPDATED_ERROR =
-  "עדכון הסטטוס לא בוצע במסד הנתונים. ייתכן שאין הרשאה או שהמפגש לא נמצא.";
+  "לא נמצאה הרשאה לעדכן את המפגש או שהמפגש לא נמצא.";
 
 async function persistSessionStatusUpdate(input: {
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
   courseId: string;
   sessionId: string;
   userId: string;
+  instructorId?: string | null;
   previousStatus: string;
   targetStatus: SessionStatus;
   payload: Database["public"]["Tables"]["sessions"]["Update"];
@@ -114,23 +115,51 @@ async function persistSessionStatusUpdate(input: {
     sessionId: input.sessionId,
     courseId: input.courseId,
     userId: input.userId,
+    instructorId: input.instructorId ?? null,
     role: input.role,
     currentStatus: input.previousStatus,
     targetStatus: input.targetStatus,
+    payloadKeys: Object.keys(input.payload),
   });
 
-  const { error } = await input.supabase
+  const { data: updateData, error: updateError } = await input.supabase
     .from("sessions")
     .update(input.payload)
     .eq("id", input.sessionId)
-    .eq("course_id", input.courseId);
+    .eq("course_id", input.courseId)
+    .select("id, status")
+    .maybeSingle();
 
-  if (error) {
-    console.error("[sessionStatusUpdate] error", {
-      sessionId: input.sessionId,
-      message: error.message,
-    });
-    return mapUpdateError(error);
+  const rowsReturned = updateData ? 1 : 0;
+
+  console.error("[sessionStatusUpdate] update", {
+    sessionId: input.sessionId,
+    targetStatus: input.targetStatus,
+    usedSelect: true,
+    matchedFilters: { id: input.sessionId, course_id: input.courseId },
+    updateError: updateError?.message ?? null,
+    updateErrorCode: updateError?.code ?? null,
+    updateData: updateData ?? null,
+    updateStatus: updateData?.status ?? null,
+    rowsReturned,
+    rlsLikelyBlocked: !updateError && rowsReturned === 0,
+    triggerLikelyBlocked:
+      Boolean(updateError?.message?.includes("Cannot mark completed before session end")) ||
+      Boolean(updateError?.message?.includes("Instructor cannot")),
+  });
+
+  if (updateError) {
+    return mapUpdateError(updateError);
+  }
+
+  if (!updateData) {
+    return sessionStatusFailure(NO_ROWS_UPDATED_ERROR);
+  }
+
+  if (updateData.status !== input.targetStatus) {
+    return sessionStatusFailure(
+      "הסטטוס לא נשמר כמצופה. נסה שוב או פנה למנהל המערכת.",
+    );
   }
 
   const verifyClient = input.supabase as unknown as typeof input.supabase & {
@@ -157,14 +186,11 @@ async function persistSessionStatusUpdate(input: {
     verifyError: verifyError?.message ?? null,
     verifiedStatus,
     targetStatus: input.targetStatus,
+    persistedViaUpdateReturn: updateData.status,
   });
 
   if (verifyError) {
     return mapUpdateError(verifyError);
-  }
-
-  if (!verifiedRow) {
-    return sessionStatusFailure(NO_ROWS_UPDATED_ERROR);
   }
 
   if (verifiedStatus !== input.targetStatus) {
@@ -285,6 +311,7 @@ export async function updateSimpleSessionStatusAction(
       courseId,
       sessionId,
       userId: auth.userId,
+      instructorId,
       previousStatus: existing.status,
       targetStatus: status,
       payload,

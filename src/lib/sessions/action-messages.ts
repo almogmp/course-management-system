@@ -24,6 +24,14 @@ const ERROR_PATTERNS: Array<{ pattern: RegExp; message: string }> = [
     message: "אין הרשאה לעדכן מפגש זה.",
   },
   {
+    pattern: /permission denied for table sessions/i,
+    message: "לא נמצאה הרשאה לעדכן את המפגש או שהמפגש לא נמצא.",
+  },
+  {
+    pattern: /row-level security|violates row-level security/i,
+    message: "לא נמצאה הרשאה לעדכן את המפגש או שהמפגש לא נמצא.",
+  },
+  {
     pattern: /מוקדם מדי לעדכן את סטטוס המפגש/i,
     message: "מוקדם מדי לעדכן את סטטוס המפגש",
   },
