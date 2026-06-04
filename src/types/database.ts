@@ -77,7 +77,15 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "instructors_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       institutions: {
         Row: {
@@ -122,7 +130,15 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "institutions_primary_supplier_id_fkey";
+            columns: ["primary_supplier_id"];
+            isOneToOne: false;
+            referencedRelation: "primary_suppliers";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       primary_suppliers: {
         Row: {
@@ -215,7 +231,36 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "courses_institution_id_fkey";
+            columns: ["institution_id"];
+            isOneToOne: false;
+            referencedRelation: "institutions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "courses_primary_supplier_id_fkey";
+            columns: ["primary_supplier_id"];
+            isOneToOne: false;
+            referencedRelation: "primary_suppliers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "courses_lead_instructor_id_fkey";
+            columns: ["lead_instructor_id"];
+            isOneToOne: false;
+            referencedRelation: "instructors";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "courses_coordinator_id_fkey";
+            columns: ["coordinator_id"];
+            isOneToOne: false;
+            referencedRelation: "institution_coordinators";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       institution_coordinators: {
         Row: {
@@ -247,6 +292,29 @@ export type Database = {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "institution_coordinators_institution_id_fkey";
+            columns: ["institution_id"];
+            isOneToOne: false;
+            referencedRelation: "institutions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notification_log: {
+        Row: {
+          id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -457,8 +525,45 @@ export type Database = {
         ];
       };
     };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Views: {
+      instructor_sessions: {
+        Row: {
+          id: string;
+          course_id: string;
+          course_name: string;
+          session_date: string;
+          start_time: string;
+          end_time: string;
+          instructor_hours: number;
+          instructor_hourly_rate: number | null;
+          status: Database["public"]["Enums"]["session_status"];
+          cancellation_reason: string | null;
+          substitute_instructor_id: string | null;
+          school_year: string;
+          status_marked_at: string | null;
+          actual_arrival_time: string | null;
+          actual_start_time: string | null;
+          actual_end_time: string | null;
+          institution_name: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Relationships: [];
+      };
+    };
+    Functions: {
+      update_instructor_session_status: {
+        Args: {
+          p_session_id: string;
+          p_course_id: string;
+          p_status: string;
+        };
+        Returns: {
+          id: string;
+          status: Database["public"]["Enums"]["session_status"];
+        }[];
+      };
+    };
     Enums: {
       user_role: "admin" | "instructor";
       approval_status: "pending" | "approved" | "rejected";

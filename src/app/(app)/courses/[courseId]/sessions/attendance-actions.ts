@@ -100,6 +100,98 @@ function buildSimpleStatusPayload(
 const NO_ROWS_UPDATED_ERROR =
   "לא נמצאה הרשאה לעדכן את המפגש או שהמפגש לא נמצא.";
 
+type InstructorStatusRpcRow = {
+  id: string;
+  status: SessionStatus;
+};
+
+async function persistInstructorSessionStatusViaRpc(input: {
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
+  courseId: string;
+  sessionId: string;
+  userId: string;
+  instructorId: string;
+  previousStatus: string;
+  targetStatus: SessionStatus;
+}): Promise<SessionStatusActionResult> {
+  console.error("[sessionStatusUpdate] before", {
+    sessionId: input.sessionId,
+    courseId: input.courseId,
+    userId: input.userId,
+    instructorId: input.instructorId,
+    role: "instructor",
+    currentStatus: input.previousStatus,
+    targetStatus: input.targetStatus,
+    method: "rpc",
+  });
+
+  const { data, error: rpcError } = await input.supabase.rpc("update_instructor_session_status", {
+    p_session_id: input.sessionId,
+    p_course_id: input.courseId,
+    p_status: input.targetStatus,
+  });
+
+  const rows = (data ?? []) as InstructorStatusRpcRow[];
+  const updateData = rows[0] ?? null;
+
+  console.error("[sessionStatusUpdate] update", {
+    sessionId: input.sessionId,
+    targetStatus: input.targetStatus,
+    method: "rpc",
+    updateError: rpcError?.message ?? null,
+    updateErrorCode: rpcError?.code ?? null,
+    updateData,
+    updateStatus: updateData?.status ?? null,
+    rowsReturned: rows.length,
+    rlsLikelyBlocked: false,
+    triggerLikelyBlocked: false,
+  });
+
+  if (rpcError) {
+    return mapUpdateError(rpcError);
+  }
+
+  if (!updateData || updateData.status !== input.targetStatus) {
+    return sessionStatusFailure(NO_ROWS_UPDATED_ERROR);
+  }
+
+  const instructorClient = input.supabase as unknown as typeof input.supabase & {
+    from: (relation: string) => ReturnType<typeof input.supabase.from>;
+  };
+
+  const { data: verifiedRow, error: verifyError } = await instructorClient
+    .from("instructor_sessions")
+    .select("status")
+    .eq("id", input.sessionId)
+    .eq("course_id", input.courseId)
+    .maybeSingle();
+
+  const verifiedStatus =
+    (verifiedRow as { status: SessionStatus } | null)?.status ?? null;
+
+  console.error("[sessionStatusUpdate] after", {
+    sessionId: input.sessionId,
+    verifySource: "instructor_sessions",
+    verifyError: verifyError?.message ?? null,
+    verifiedStatus,
+    targetStatus: input.targetStatus,
+    persistedViaRpc: updateData.status,
+  });
+
+  if (verifyError) {
+    return mapUpdateError(verifyError);
+  }
+
+  if (verifiedStatus !== input.targetStatus) {
+    return sessionStatusFailure(
+      "הסטטוס לא נשמר כמצופה. נסה שוב או פנה למנהל המערכת.",
+    );
+  }
+
+  revalidateSessionPaths(input.courseId);
+  return sessionStatusSuccess(SESSION_ACTION_SUCCESS.status);
+}
+
 async function persistSessionStatusUpdate(input: {
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
   courseId: string;
@@ -166,19 +258,32 @@ async function persistSessionStatusUpdate(input: {
     from: (relation: string) => ReturnType<typeof input.supabase.from>;
   };
 
+  let verifiedStatus: string | null = null;
+  let verifyError: { message: string } | null = null;
   const verifySource =
     input.role === "instructor" ? "instructor_sessions" : "sessions";
 
-  const { data: verifiedRow, error: verifyError } = await (
-    input.role === "instructor" ? verifyClient : input.supabase
-  )
-    .from(verifySource)
-    .select("status")
-    .eq("id", input.sessionId)
-    .eq("course_id", input.courseId)
-    .maybeSingle();
+  if (input.role === "instructor") {
+    const { data: verifiedRow, error } = await verifyClient
+      .from("instructor_sessions")
+      .select("status")
+      .eq("id", input.sessionId)
+      .eq("course_id", input.courseId)
+      .maybeSingle();
 
-  const verifiedStatus = (verifiedRow as { status?: string } | null)?.status ?? null;
+    verifyError = error;
+    verifiedStatus = (verifiedRow as { status?: string } | null)?.status ?? null;
+  } else {
+    const { data: verifiedRow, error } = await input.supabase
+      .from("sessions")
+      .select("status")
+      .eq("id", input.sessionId)
+      .eq("course_id", input.courseId)
+      .maybeSingle();
+
+    verifyError = error;
+    verifiedStatus = verifiedRow?.status ?? null;
+  }
 
   console.error("[sessionStatusUpdate] after", {
     sessionId: input.sessionId,
@@ -264,58 +369,43 @@ export async function updateSimpleSessionStatusAction(
       return sessionStatusFailure("לא נמצא פרופיל מדריך.");
     }
 
-    const ownership = await assertInstructorOwnsSession(courseId, sessionId);
-
-    if (!ownership.ok) {
-      return sessionStatusFailure(ownership.error);
-    }
-
     const instructorClient = supabase as unknown as typeof supabase & {
       from: (relation: string) => ReturnType<typeof supabase.from>;
     };
 
     const { data: sessionRow, error: fetchError } = await instructorClient
       .from("instructor_sessions")
-      .select(
-        "session_date, start_time, status, cancellation_reason, actual_arrival_time, actual_start_time, actual_end_time",
-      )
+      .select("session_date, start_time, status")
       .eq("id", sessionId)
+      .eq("course_id", courseId)
       .maybeSingle();
 
     if (fetchError) {
       return mapUpdateError(fetchError);
     }
 
-    const existing = sessionRow as {
+    const session = sessionRow as {
       session_date: string;
       start_time: string;
       status: string;
-      cancellation_reason: string | null;
-      actual_arrival_time: string | null;
-      actual_start_time: string | null;
-      actual_end_time: string | null;
     } | null;
 
-    if (!existing) {
+    if (!session) {
       return sessionStatusFailure("המפגש לא נמצא.");
     }
 
-    if (!hasSessionStarted(existing.session_date, existing.start_time)) {
+    if (!hasSessionStarted(session.session_date, session.start_time)) {
       return sessionStatusFailure(INSTRUCTOR_STATUS_TOO_EARLY_ERROR);
     }
 
-    const payload = buildSimpleStatusPayload(status, existing, { asAdmin: false });
-
-    return persistSessionStatusUpdate({
+    return persistInstructorSessionStatusViaRpc({
       supabase,
       courseId,
       sessionId,
       userId: auth.userId,
       instructorId,
-      previousStatus: existing.status,
+      previousStatus: session.status,
       targetStatus: status,
-      payload,
-      role: "instructor",
     });
   } catch (unknown) {
     console.error("[updateSimpleSessionStatusAction]", unknown);
