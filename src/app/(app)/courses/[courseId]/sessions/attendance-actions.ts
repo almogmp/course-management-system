@@ -114,6 +114,12 @@ async function persistInstructorSessionStatusViaRpc(input: {
   previousStatus: string;
   targetStatus: SessionStatus;
 }): Promise<SessionStatusActionResult> {
+  console.log("[sessionStatusUpdate] rpc-called", {
+    sessionId: input.sessionId,
+    courseId: input.courseId,
+    status: input.targetStatus,
+  });
+
   console.error("[sessionStatusUpdate] before", {
     sessionId: input.sessionId,
     courseId: input.courseId,
@@ -397,6 +403,11 @@ export async function updateSimpleSessionStatusAction(
     if (!hasSessionStarted(session.session_date, session.start_time)) {
       return sessionStatusFailure(INSTRUCTOR_STATUS_TOO_EARLY_ERROR);
     }
+
+    console.log("[sessionStatusUpdate] path", {
+      role: "instructor",
+      usingRpc: true,
+    });
 
     return persistInstructorSessionStatusViaRpc({
       supabase,
