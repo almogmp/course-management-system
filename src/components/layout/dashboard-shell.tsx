@@ -17,7 +17,7 @@ const baseNavItems = [
 
 const adminNavItems = [
   { href: "/admin/courses/with-sessions", label: "קורס + מפגשים" },
-  { href: "/admin/reports", label: "דוחות" },
+  { href: "/reports", label: "דוחות" },
   { href: "/admin/expenses", label: "הוצאות" },
   { href: "/admin/instructors", label: "מדריכים" },
   { href: "/admin/payroll", label: "שכר" },

@@ -17,7 +17,7 @@ const instructorNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-  { href: "/admin/reports", label: "דוחות" },
+  { href: "/reports", label: "דוחות" },
   { href: "/admin/expenses", label: "הוצאות" },
   { href: "/admin/instructors", label: "מדריכים" },
   { href: "/admin/payroll", label: "שכר" },
