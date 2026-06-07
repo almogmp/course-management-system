@@ -1,11 +1,6 @@
 import Link from "next/link";
 
 import type { OperationalDashboardData } from "@/components/dashboard/get-operational-dashboard-data";
-import {
-  SESSION_STATUS_LABELS,
-  sessionsListSelectValue,
-  type SessionStatus,
-} from "@/components/sessions/constants";
 import { SessionSimpleStatusSelect } from "@/components/sessions/session-simple-status-select";
 import { formatSessionDate, formatSessionTimeRange } from "@/components/sessions/format";
 
@@ -14,25 +9,13 @@ type DashboardOperationalSectionsProps = {
   isAdmin: boolean;
 };
 
-function OperationalSessionList({
+function PendingApprovalSessionList({
   sessions,
   isAdmin,
-  emptyMessage,
-  showQuickStatus = false,
 }: {
-  sessions: OperationalDashboardData["activeNowSessions"];
+  sessions: OperationalDashboardData["pendingApprovalSessions"];
   isAdmin: boolean;
-  emptyMessage: string;
-  showQuickStatus?: boolean;
 }) {
-  if (sessions.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-        {emptyMessage}
-      </p>
-    );
-  }
-
   return (
     <ul className="space-y-2">
       {sessions.map((session) => (
@@ -54,7 +37,7 @@ function OperationalSessionList({
             ) : null}
           </div>
           <div className="flex flex-col gap-2 sm:items-end">
-            {showQuickStatus && isAdmin ? (
+            {isAdmin ? (
               <SessionSimpleStatusSelect
                 courseId={session.course_id}
                 sessionId={session.id}
@@ -64,11 +47,7 @@ function OperationalSessionList({
                 startTime={session.start_time}
                 compact
               />
-            ) : (
-              <span className="text-sm text-muted-foreground">
-                {SESSION_STATUS_LABELS[sessionsListSelectValue(session.status as SessionStatus)]}
-              </span>
-            )}
+            ) : null}
             <Link
               href={`/courses/${session.course_id}/sessions`}
               className="text-xs font-medium text-primary underline-offset-4 hover:underline"
@@ -86,49 +65,14 @@ export function DashboardOperationalSections({
   data,
   isAdmin,
 }: DashboardOperationalSectionsProps) {
-  const sections = [
-    {
-      id: "active-now",
-      title: "מפגשים פעילים עכשיו",
-      sessions: data.activeNowSessions,
-      emptyMessage: "אין מפגשים פעילים כרגע.",
-      showQuickStatus: true,
-    },
-    {
-      id: "delayed-arrival",
-      title: "מדריכים שלא אישרו הגעה",
-      sessions: data.delayedArrivalSessions,
-      emptyMessage: "אין מפגשים באיחור כרגע.",
-      showQuickStatus: true,
-    },
-    {
-      id: "completed-today",
-      title: "מפגשים שהסתיימו היום",
-      sessions: data.completedTodaySessions,
-      emptyMessage: "אין מפגשים שסומנו כבוצעו היום.",
-    },
-    {
-      id: "pending-approval",
-      title: "מפגשים שממתינים לאישור",
-      sessions: data.pendingApprovalSessions,
-      emptyMessage: "אין מפגשים שממתינים לאישור.",
-      showQuickStatus: true,
-    },
-  ] as const;
+  if (data.pendingApprovalSessions.length === 0) {
+    return null;
+  }
 
   return (
-    <section aria-label="תפעול יומי" className="space-y-6">
-      {sections.map((section) => (
-        <div key={section.id} className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
-          <OperationalSessionList
-            sessions={section.sessions}
-            isAdmin={isAdmin}
-            emptyMessage={section.emptyMessage}
-            showQuickStatus={"showQuickStatus" in section ? section.showQuickStatus : false}
-          />
-        </div>
-      ))}
+    <section aria-label="מפגשים שממתינים לאישור" className="space-y-3">
+      <h2 className="text-lg font-semibold text-foreground">מפגשים שממתינים לאישור</h2>
+      <PendingApprovalSessionList sessions={data.pendingApprovalSessions} isAdmin={isAdmin} />
     </section>
   );
 }

@@ -1,8 +1,5 @@
 import type { SessionStatus } from "@/components/sessions/constants";
-import { isSessionDelayed } from "@/lib/sessions/session-delay";
-import { isSessionActiveNow } from "@/lib/sessions/session-active";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { toLocalDateKey } from "@/lib/date/week";
 
 export type OperationalDashboardSession = {
   id: string;
@@ -13,14 +10,9 @@ export type OperationalDashboardSession = {
   status: SessionStatus;
   course_name: string | null;
   cancellation_reason: string | null;
-  is_delayed: boolean;
-  status_marked_at: string | null;
 };
 
 export type OperationalDashboardData = {
-  activeNowSessions: OperationalDashboardSession[];
-  delayedArrivalSessions: OperationalDashboardSession[];
-  completedTodaySessions: OperationalDashboardSession[];
   pendingApprovalSessions: OperationalDashboardSession[];
 };
 
@@ -34,14 +26,6 @@ function sortByStartTime(sessions: OperationalDashboardSession[]): OperationalDa
   });
 }
 
-function isMarkedToday(statusMarkedAt: string | null, todayKey: string): boolean {
-  if (!statusMarkedAt) {
-    return false;
-  }
-
-  return toLocalDateKey(new Date(statusMarkedAt)) === todayKey;
-}
-
 type AdminOperationalRow = {
   id: string;
   course_id: string;
@@ -50,8 +34,6 @@ type AdminOperationalRow = {
   end_time: string;
   status: SessionStatus;
   cancellation_reason: string | null;
-  status_marked_at: string | null;
-  actual_arrival_time: string | null;
   courses: { name: string } | null;
 };
 
@@ -63,8 +45,6 @@ type InstructorOperationalRow = {
   end_time: string;
   status: SessionStatus;
   cancellation_reason: string | null;
-  status_marked_at: string | null;
-  actual_arrival_time: string | null;
   course_name: string;
 };
 
@@ -82,58 +62,6 @@ function mapRow(
     status: row.status,
     course_name: row.course_name,
     cancellation_reason: row.cancellation_reason,
-    status_marked_at: row.status_marked_at,
-    is_delayed: isSessionDelayed(
-      row.session_date,
-      row.start_time,
-      row.status,
-      row.actual_arrival_time,
-    ),
-  };
-}
-
-export function buildOperationalDashboardData(
-  rows: OperationalDashboardSession[],
-): OperationalDashboardData {
-  const todayKey = toLocalDateKey(new Date());
-
-  const activeNowSessions = sortByStartTime(
-    rows.filter((session) =>
-      isSessionActiveNow(
-        session.session_date,
-        session.start_time,
-        session.end_time,
-        session.status,
-      ),
-    ),
-  );
-
-  const delayedArrivalSessions = sortByStartTime(
-    rows.filter((session) => session.is_delayed && session.session_date === todayKey),
-  );
-
-  const pendingApprovalSessions = sortByStartTime(
-    rows.filter((session) => session.status === "deferred"),
-  );
-
-  const completedTodaySessions = sortByStartTime(
-    rows.filter((session) => {
-      if (session.status !== "completed") {
-        return false;
-      }
-
-      return (
-        isMarkedToday(session.status_marked_at, todayKey) ||
-        session.session_date === todayKey
-      );
-    }),
-  );
-
-  return {
-    activeNowSessions,
-    delayedArrivalSessions,
-    completedTodaySessions,
-    pendingApprovalSessions,
   };
 }
 
@@ -146,8 +74,9 @@ export async function getOperationalDashboardData(
     const { data, error } = await supabase
       .from("sessions")
       .select(
-        "id, course_id, session_date, start_time, end_time, status, cancellation_reason, status_marked_at, actual_arrival_time, courses(name)",
+        "id, course_id, session_date, start_time, end_time, status, cancellation_reason, courses(name)",
       )
+      .eq("status", "deferred")
       .order("session_date", { ascending: true })
       .order("start_time", { ascending: true });
 
@@ -162,7 +91,7 @@ export async function getOperationalDashboardData(
       }),
     );
 
-    return buildOperationalDashboardData(rows);
+    return { pendingApprovalSessions: sortByStartTime(rows) };
   }
 
   const instructorClient = supabase as unknown as typeof supabase & {
@@ -172,8 +101,9 @@ export async function getOperationalDashboardData(
   const { data, error } = await instructorClient
     .from("instructor_sessions")
     .select(
-      "id, course_id, session_date, start_time, end_time, status, cancellation_reason, status_marked_at, actual_arrival_time, course_name",
+      "id, course_id, session_date, start_time, end_time, status, cancellation_reason, course_name",
     )
+    .eq("status", "deferred")
     .order("session_date", { ascending: true })
     .order("start_time", { ascending: true });
 
@@ -185,5 +115,5 @@ export async function getOperationalDashboardData(
     mapRow({ ...row, course_name: row.course_name ?? null }),
   );
 
-  return buildOperationalDashboardData(rows);
+  return { pendingApprovalSessions: sortByStartTime(rows) };
 }

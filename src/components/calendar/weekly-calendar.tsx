@@ -11,6 +11,8 @@ type WeeklyCalendarProps = {
   sessions: WeeklyCalendarSession[];
 };
 
+const MOBILE_SCROLL_SESSION_THRESHOLD = 6;
+
 function sortSessionsByStartTime(
   daySessions: WeeklyCalendarSession[],
 ): WeeklyCalendarSession[] {
@@ -35,28 +37,6 @@ function DaySessionsList({
   );
 }
 
-/** Scrollable only when content exceeds max height; never clips sessions. */
-function DaySessionsScrollArea({
-  daySessions,
-  dense,
-  className,
-}: {
-  daySessions: WeeklyCalendarSession[];
-  dense: boolean;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "min-h-0 overflow-y-auto overscroll-contain",
-        className,
-      )}
-    >
-      <DaySessionsList daySessions={daySessions} dense={dense} />
-    </div>
-  );
-}
-
 export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
   const sessionsByDate = groupSessionsByDate(sessions);
 
@@ -65,7 +45,10 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
   }
 
   const hasSessions = sessions.length > 0;
-  const maxPerDay = Math.max(0, ...weekDays.map((day) => (sessionsByDate[day.dateKey] ?? []).length));
+  const maxPerDay = Math.max(
+    0,
+    ...weekDays.map((day) => (sessionsByDate[day.dateKey] ?? []).length),
+  );
   const dense = maxPerDay >= 4;
 
   return (
@@ -76,11 +59,11 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
         {weekDays.map((day) => {
           const daySessions = sessionsByDate[day.dateKey] ?? [];
           const dayDense = dense || daySessions.length >= 3;
-          const useScrollCap = daySessions.length >= 4;
+          const useMobileScroll = daySessions.length >= MOBILE_SCROLL_SESSION_THRESHOLD;
 
           return (
-            <section key={day.dateKey} className="min-h-0 text-start">
-              <div className="mb-2 shrink-0">
+            <section key={day.dateKey} className="text-start">
+              <div className="mb-2">
                 <CalendarDayHeader
                   weekdayLabel={day.label}
                   dayNumber={day.dayNumber}
@@ -92,12 +75,10 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
               </div>
               {daySessions.length === 0 ? (
                 <p className="text-xs text-muted-foreground">אין מפגשים</p>
-              ) : useScrollCap ? (
-                <DaySessionsScrollArea
-                  daySessions={daySessions}
-                  dense={dayDense}
-                  className="max-h-[min(28rem,65vh)]"
-                />
+              ) : useMobileScroll ? (
+                <div className="max-h-[min(32rem,70vh)] overflow-y-auto overscroll-contain">
+                  <DaySessionsList daySessions={daySessions} dense={dayDense} />
+                </div>
               ) : (
                 <DaySessionsList daySessions={daySessions} dense={dayDense} />
               )}
@@ -106,7 +87,7 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
         })}
       </div>
 
-      <div className="hidden min-h-0 gap-2 md:grid md:grid-cols-7 md:items-stretch">
+      <div className="hidden md:grid md:grid-cols-7 md:items-stretch md:gap-2">
         {weekDays.map((day) => {
           const daySessions = sessionsByDate[day.dateKey] ?? [];
           const dayDense = dense || daySessions.length >= 3;
@@ -115,7 +96,7 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
             <div
               key={day.dateKey}
               className={cn(
-                "flex min-h-0 flex-col rounded-xl border bg-surface p-2 sm:min-h-52",
+                "flex h-full flex-col rounded-xl border bg-surface p-2",
                 day.isToday ? "border-primary ring-2 ring-primary/20" : "border-border",
               )}
             >
@@ -130,17 +111,13 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
                   compact
                 />
               </div>
-              {daySessions.length === 0 ? (
-                <p className="flex flex-1 items-center justify-center text-center text-xs text-muted-foreground">
-                  —
-                </p>
-              ) : (
-                <DaySessionsScrollArea
-                  daySessions={daySessions}
-                  dense={dayDense}
-                  className="max-h-[min(24rem,70vh)] flex-1 lg:max-h-[min(28rem,75vh)] xl:max-h-[min(32rem,80vh)]"
-                />
-              )}
+              <div className="flex flex-1 flex-col">
+                {daySessions.length === 0 ? (
+                  <p className="text-center text-xs text-muted-foreground">—</p>
+                ) : (
+                  <DaySessionsList daySessions={daySessions} dense={dayDense} />
+                )}
+              </div>
             </div>
           );
         })}
