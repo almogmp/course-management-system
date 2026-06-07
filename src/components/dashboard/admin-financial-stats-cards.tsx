@@ -1,69 +1,74 @@
+import {
+  DashboardFinancialCardGrid,
+  type DashboardFinancialCard,
+} from "@/components/dashboard/dashboard-financial-card-grid";
 import { formatCurrency } from "@/lib/financial/format-currency";
-import type { AdminFinancialDashboardStats } from "@/lib/financial/get-admin-financial-dashboard";
+import type {
+  AdminFinancialDashboardStats,
+  AdminFinancialPeriodStats,
+} from "@/lib/financial/get-admin-financial-dashboard";
 
 type AdminFinancialStatsCardsProps = {
   stats: AdminFinancialDashboardStats;
 };
 
-export function AdminFinancialStatsCards({ stats }: AdminFinancialStatsCardsProps) {
-  const cards = [
+function buildPeriodCards(
+  period: AdminFinancialPeriodStats,
+  label: "היום" | "החודש",
+): DashboardFinancialCard[] {
+  return [
     {
-      title: "תקבול ברוטו היום (בפועל)",
-      value: formatCurrency(stats.todayActualGrossRevenue),
-      description: "מפגשים שבוצעו היום — כולל מע״מ",
+      key: `${label}-gross`,
+      title: `תקבול ברוטו ${label}`,
+      value: formatCurrency(period.grossRevenue),
     },
     {
-      title: "תקבול ברוטו היום (פוטנציאלי)",
-      value: formatCurrency(stats.todayPotentialGrossRevenue),
-      description: "כולל מתוכננים פעילים היום",
+      key: `${label}-vat`,
+      title: `מע״מ ${label}`,
+      value: formatCurrency(period.vat),
     },
     {
-      title: "רווח נקי החודש (בפועל)",
-      value: formatCurrency(stats.monthActualNetProfit),
-      description: "נטו לפני מדריך פחות שכר — מפגשים שבוצעו",
+      key: `${label}-instructor-cost`,
+      title: `עלות מדריכים ${label}`,
+      value: formatCurrency(period.instructorCost),
     },
     {
-      title: "רווח נקי החודש (פוטנציאלי)",
-      value: formatCurrency(stats.monthPotentialNetProfit),
-      description: "תחזית לפי מפגשים פעילים/מתוכננים",
+      key: `${label}-net-profit`,
+      title: `רווח נקי ${label}`,
+      value: formatCurrency(period.netProfit),
+      emphasized: label === "החודש",
     },
     {
-      title: "רווח ברוטו החודש (בפועל)",
-      value: formatCurrency(stats.monthActualGrossProfit),
-      description: "תקבול ברוטו פחות שכר מדריך",
+      key: `${label}-potential-gross`,
+      title: `תקבול פוטנציאלי ${label}`,
+      value: formatCurrency(period.potentialGrossRevenue),
     },
     {
-      title: "שכר מדריכים החודש (בפועל)",
-      value: formatCurrency(stats.monthActualInstructorPayout),
-      description: "ללא ניכוי מע״מ — מפגשים שבוצעו",
+      key: `${label}-potential-net-profit`,
+      title: `רווח פוטנציאלי ${label}`,
+      value: formatCurrency(period.potentialNetProfit),
     },
-    {
-      title: "שכר מדריכים החודש (פוטנציאלי)",
-      value: formatCurrency(stats.monthPotentialInstructorPayout),
-      description: "כולל מתוכננים בחודש",
-    },
-  ] as const;
+  ];
+}
 
+export function AdminFinancialStatsCards({ stats }: AdminFinancialStatsCardsProps) {
   return (
-    <section aria-label="סיכום פיננסי" className="space-y-3">
+    <section aria-label="סיכום פיננסי" className="space-y-8">
       {stats.missingRateSessionCount > 0 ? (
         <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          {stats.missingRateSessionCount} מפגשים בחודש ללא תמחור מלא — יש להשלים מחיר מוסד או שכר מדריך.
+          {stats.missingRateSessionCount} מפגשים בחודש ללא תמחור מלא — יש להשלים מחיר מוסד או שכר
+          מדריך.
         </p>
       ) : null}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map((card) => (
-          <article
-            key={card.title}
-            className="rounded-xl border border-border bg-surface p-5 sm:p-6"
-          >
-            <h2 className="text-sm font-medium text-muted-foreground">{card.title}</h2>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              {card.value}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">{card.description}</p>
-          </article>
-        ))}
+
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground">נתוני היום</h2>
+        <DashboardFinancialCardGrid cards={buildPeriodCards(stats.today, "היום")} columns={6} />
+      </div>
+
+      <div className="space-y-3 border-t border-border pt-8">
+        <h2 className="text-lg font-semibold text-foreground">נתוני החודש</h2>
+        <DashboardFinancialCardGrid cards={buildPeriodCards(stats.month, "החודש")} columns={6} />
       </div>
     </section>
   );

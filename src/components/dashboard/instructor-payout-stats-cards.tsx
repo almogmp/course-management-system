@@ -1,54 +1,53 @@
+import {
+  DashboardFinancialCardGrid,
+  type DashboardFinancialCard,
+} from "@/components/dashboard/dashboard-financial-card-grid";
+import { formatSessionHours } from "@/components/sessions/format";
 import { formatCurrency } from "@/lib/financial/format-currency";
-import type { InstructorPayoutDashboardStats } from "@/lib/financial/get-instructor-payout-dashboard";
+import type {
+  InstructorFinancialPeriodStats,
+  InstructorPayoutDashboardStats,
+} from "@/lib/financial/get-instructor-payout-dashboard";
 
 type InstructorPayoutStatsCardsProps = {
   stats: InstructorPayoutDashboardStats;
 };
 
-export function InstructorPayoutStatsCards({ stats }: InstructorPayoutStatsCardsProps) {
-  const cards = [
+function buildPeriodCards(
+  period: InstructorFinancialPeriodStats,
+  label: "היום" | "החודש",
+): DashboardFinancialCard[] {
+  return [
     {
-      title: "השכר שלי היום בפועל",
-      value: formatCurrency(stats.todayActualPayout),
+      key: `${label}-hours`,
+      title: `שעות ${label}`,
+      value: formatSessionHours(period.hours),
     },
     {
-      title: "השכר שלי היום פוטנציאלי",
-      value: formatCurrency(stats.todayPotentialPayout),
+      key: `${label}-actual-payout`,
+      title: `שכר שבוצע ${label}`,
+      value: formatCurrency(period.actualPayout),
     },
     {
-      title: "השכר שלי השבוע בפועל",
-      value: formatCurrency(stats.weekActualPayout),
+      key: `${label}-potential-payout`,
+      title: `שכר פוטנציאלי ${label}`,
+      value: formatCurrency(period.potentialPayout),
     },
-    {
-      title: "השכר שלי השבוע פוטנציאלי",
-      value: formatCurrency(stats.weekPotentialPayout),
-    },
-    {
-      title: "השכר שלי החודש בפועל",
-      value: formatCurrency(stats.monthActualPayout),
-    },
-    {
-      title: "השכר שלי החודש פוטנציאלי",
-      value: formatCurrency(stats.monthPotentialPayout),
-    },
-  ] as const;
+  ];
+}
 
+export function InstructorPayoutStatsCards({ stats }: InstructorPayoutStatsCardsProps) {
   return (
-    <section
-      aria-label="סיכום שכר"
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-    >
-      {cards.map((card) => (
-        <article
-          key={card.title}
-          className="rounded-xl border border-border bg-surface p-5 sm:p-6"
-        >
-          <h2 className="text-sm font-medium text-muted-foreground">{card.title}</h2>
-          <p className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            {card.value}
-          </p>
-        </article>
-      ))}
+    <section aria-label="סיכום שכר" className="space-y-8">
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground">נתוני היום</h2>
+        <DashboardFinancialCardGrid cards={buildPeriodCards(stats.today, "היום")} columns={3} />
+      </div>
+
+      <div className="space-y-3 border-t border-border pt-8">
+        <h2 className="text-lg font-semibold text-foreground">נתוני החודש</h2>
+        <DashboardFinancialCardGrid cards={buildPeriodCards(stats.month, "החודש")} columns={3} />
+      </div>
     </section>
   );
 }

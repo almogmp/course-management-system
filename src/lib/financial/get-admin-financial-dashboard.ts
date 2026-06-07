@@ -6,17 +6,33 @@ import {
 import { getTodayDateKey } from "@/lib/financial/period-bounds";
 import { sumFinancialRecords } from "@/lib/financial/financial-session-record";
 
+export type AdminFinancialPeriodStats = {
+  grossRevenue: number;
+  vat: number;
+  instructorCost: number;
+  netProfit: number;
+  potentialGrossRevenue: number;
+  potentialNetProfit: number;
+};
+
 export type AdminFinancialDashboardStats = {
-  todayActualGrossRevenue: number;
-  todayPotentialGrossRevenue: number;
-  monthActualNetProfit: number;
-  monthPotentialNetProfit: number;
-  monthActualGrossProfit: number;
-  monthPotentialGrossProfit: number;
-  monthActualInstructorPayout: number;
-  monthPotentialInstructorPayout: number;
+  today: AdminFinancialPeriodStats;
+  month: AdminFinancialPeriodStats;
   missingRateSessionCount: number;
 };
+
+function periodStatsFromTotals(
+  totals: ReturnType<typeof sumFinancialRecords>,
+): AdminFinancialPeriodStats {
+  return {
+    grossRevenue: totals.actualGrossRevenue,
+    vat: totals.actualVatAmount,
+    instructorCost: totals.actualInstructorPayout,
+    netProfit: totals.actualNetProfit,
+    potentialGrossRevenue: totals.potentialGrossRevenue,
+    potentialNetProfit: totals.potentialNetProfit,
+  };
+}
 
 export async function getAdminFinancialDashboard(
   monthView: MonthView,
@@ -36,14 +52,8 @@ export async function getAdminFinancialDashboard(
   ).length;
 
   return {
-    todayActualGrossRevenue: todayTotals.actualGrossRevenue,
-    todayPotentialGrossRevenue: todayTotals.potentialGrossRevenue,
-    monthActualNetProfit: monthTotals.actualNetProfit,
-    monthPotentialNetProfit: monthTotals.potentialNetProfit,
-    monthActualGrossProfit: monthTotals.actualGrossProfit,
-    monthPotentialGrossProfit: monthTotals.potentialGrossProfit,
-    monthActualInstructorPayout: monthTotals.actualInstructorPayout,
-    monthPotentialInstructorPayout: monthTotals.potentialInstructorPayout,
+    today: periodStatsFromTotals(todayTotals),
+    month: periodStatsFromTotals(monthTotals),
     missingRateSessionCount,
   };
 }
