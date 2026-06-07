@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { buildReportsUrl, type ReportSearchParams } from "@/lib/reports/report-url";
+import { buildReportPathUrl, type ReportSearchParams } from "@/lib/reports/report-url";
 import type { PartnerReportDateRange } from "@/lib/reports/partner-report-types";
 import type { PartnerReportFilterOptions } from "@/lib/reports/partner-report-types";
 
@@ -11,6 +11,7 @@ type ReportsFiltersProps = {
   dateRange: PartnerReportDateRange;
   searchParams?: ReportSearchParams;
   filterOptions: PartnerReportFilterOptions;
+  basePath?: "/reports" | "/reports/audit";
 };
 
 const selectClassName =
@@ -23,6 +24,7 @@ export function ReportsFilters({
   dateRange,
   searchParams,
   filterOptions,
+  basePath = "/reports",
 }: ReportsFiltersProps) {
   const router = useRouter();
 
@@ -40,10 +42,10 @@ export function ReportsFilters({
       delete next[key];
     }
 
-    router.push(buildReportsUrl(dateRange, next));
+    router.push(buildReportPathUrl(basePath, dateRange, next));
   }
 
-  const clearHref = buildReportsUrl(dateRange);
+  const clearHref = buildReportPathUrl(basePath, dateRange);
 
   return (
     <section

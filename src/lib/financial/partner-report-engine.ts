@@ -1,20 +1,14 @@
+import {
+  computeCompletedSessionMoney,
+  type CompletedSessionFinancialInput,
+  type CompletedSessionMoney,
+} from "@/lib/financial/resolve-session-rates";
 import { roundMoney } from "@/lib/financial/round-money";
-import { VAT_DIVISOR } from "@/lib/financial/vat";
 
 /** Money totals for partner profit discussions (completed sessions only). */
-export type PartnerReportMoney = {
-  grossRevenue: number;
-  vat: number;
-  instructorCost: number;
-  grossProfit: number;
-};
+export type PartnerReportMoney = CompletedSessionMoney;
 
-export type PartnerReportSessionInput = {
-  instructor_hours: number;
-  /** Stored on session as institution_hourly_rate (company billing rate). */
-  company_hourly_rate: number | null;
-  instructor_hourly_rate: number | null;
-};
+export type PartnerReportSessionInput = CompletedSessionFinancialInput;
 
 export function emptyPartnerReportMoney(): PartnerReportMoney {
   return {
@@ -26,26 +20,16 @@ export function emptyPartnerReportMoney(): PartnerReportMoney {
 }
 
 /**
- * Per-session financials using only values stored on the session row.
- * Hours: instructor_hours. Rates: session company + instructor hourly rates.
+ * Per completed session: company_hours × company rate, instructor_hours × instructor rate.
+ * Rates resolved via shared resolver (session override → course fallback).
  */
-export function computePartnerSessionMoney(
-  input: PartnerReportSessionInput,
-): PartnerReportMoney {
-  const hours = input.instructor_hours;
-  const companyRate = input.company_hourly_rate ?? 0;
-  const instructorRate = input.instructor_hourly_rate ?? 0;
-
-  const grossRevenue = roundMoney(hours * companyRate);
-  const instructorCost = roundMoney(hours * instructorRate);
-  const vat = roundMoney(grossRevenue - grossRevenue / VAT_DIVISOR);
-  const grossProfit = roundMoney(grossRevenue - vat - instructorCost);
-
+export function computePartnerSessionMoney(input: PartnerReportSessionInput): PartnerReportMoney {
+  const result = computeCompletedSessionMoney(input);
   return {
-    grossRevenue,
-    vat,
-    instructorCost,
-    grossProfit,
+    grossRevenue: result.grossRevenue,
+    vat: result.vat,
+    instructorCost: result.instructorCost,
+    grossProfit: result.grossProfit,
   };
 }
 

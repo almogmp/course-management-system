@@ -5,6 +5,15 @@ export type PartnerReportDateRange = {
   to: string;
 };
 
+export type PartnerReportRateAudit = {
+  missingCompanyRateSessionCount: number;
+  missingInstructorRateSessionCount: number;
+  sessionLevelCompanyRateCount: number;
+  courseFallbackCompanyRateCount: number;
+  sessionLevelInstructorRateCount: number;
+  courseFallbackInstructorRateCount: number;
+};
+
 export type PartnerReportEntityRow = {
   id: string;
   name: string;
@@ -18,6 +27,7 @@ export type PartnerFinancialReport = {
     completedSessionCount: number;
     totalHours: number;
   } & PartnerReportMoney;
+  rateAudit: PartnerReportRateAudit;
   instructorRows: PartnerReportEntityRow[];
   institutionRows: PartnerReportEntityRow[];
 };

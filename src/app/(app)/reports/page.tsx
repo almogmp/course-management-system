@@ -6,6 +6,7 @@ import { ReportsFilters } from "@/components/reports/reports-filters";
 import { ReportsFinancialSummaryCards } from "@/components/reports/reports-financial-summary-cards";
 import { ReportsInstitutionTable } from "@/components/reports/reports-institution-table";
 import { ReportsInstructorTable } from "@/components/reports/reports-instructor-table";
+import { ReportsRateWarnings } from "@/components/reports/reports-rate-warnings";
 import { Container } from "@/components/ui/container";
 import { requireAdmin } from "@/lib/auth/guards";
 import { buildPartnerFinancialReport } from "@/lib/reports/build-partner-financial-report";
@@ -14,7 +15,7 @@ import {
   getPartnerReportSessions,
 } from "@/lib/reports/get-partner-report-sessions";
 import { formatReportRangeLabel, parseReportDateRange } from "@/lib/reports/report-date-range";
-import type { ReportSearchParams } from "@/lib/reports/report-url";
+import { buildFinancialAuditUrl, type ReportSearchParams } from "@/lib/reports/report-url";
 
 type ReportsPageProps = {
   searchParams?: ReportSearchParams;
@@ -82,10 +83,20 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
       <ReportsExportToolbar report={report} rangeLabel={rangeLabel} />
 
       <div id="reports-print-area" className="space-y-8 print:space-y-6">
+        <ReportsRateWarnings audit={report.rateAudit} />
         <ReportsFinancialSummaryCards report={report} />
         <ReportsInstructorTable rows={report.instructorRows} />
         <ReportsInstitutionTable rows={report.institutionRows} />
       </div>
+
+      <p className="text-xs text-muted-foreground print:hidden">
+        <Link
+          href={buildFinancialAuditUrl(dateRange, searchParams)}
+          className="underline-offset-4 hover:underline"
+        >
+          אבחון חישובים ברמת מפגש (מנהל)
+        </Link>
+      </p>
     </Container>
   );
 }

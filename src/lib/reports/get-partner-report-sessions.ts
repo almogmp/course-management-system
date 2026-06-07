@@ -8,9 +8,13 @@ export type PartnerReportSessionRow = {
   id: string;
   session_date: string;
   status: SessionStatus;
+  course_name: string;
+  company_hours: number;
   instructor_hours: number;
-  company_hourly_rate: number | null;
-  instructor_hourly_rate: number | null;
+  sessionInstitutionHourlyRate: number | null;
+  sessionInstructorHourlyRate: number | null;
+  courseCompanyHourlyRate: number | null;
+  courseInstructorHourlyWage: number | null;
   instructor_id: string;
   instructor_name: string;
   institution_id: string | null;
@@ -22,6 +26,7 @@ type PartnerSessionQueryRow = Pick<
   | "id"
   | "session_date"
   | "status"
+  | "company_hours"
   | "instructor_hours"
   | "institution_hourly_rate"
   | "instructor_hourly_rate"
@@ -29,7 +34,12 @@ type PartnerSessionQueryRow = Pick<
 > & {
   courses: Pick<
     Database["public"]["Tables"]["courses"]["Row"],
-    "id" | "institution_id" | "lead_instructor_id"
+    | "id"
+    | "name"
+    | "institution_id"
+    | "lead_instructor_id"
+    | "company_hourly_rate"
+    | "instructor_hourly_wage"
   > & {
     institutions: Pick<Database["public"]["Tables"]["institutions"]["Row"], "id" | "name"> | null;
   } | null;
@@ -58,7 +68,7 @@ export async function getPartnerReportFilterOptions(): Promise<PartnerReportFilt
   };
 }
 
-/** Completed sessions in date range; rates read from session row only. */
+/** Completed sessions in date range with session + course rates for shared resolver. */
 export async function getPartnerReportSessions(
   startDate: string,
   endDate: string,
@@ -70,9 +80,9 @@ export async function getPartnerReportSessions(
       supabase
         .from("sessions")
         .select(
-          `id, session_date, status, instructor_hours, institution_hourly_rate, instructor_hourly_rate,
+          `id, session_date, status, company_hours, instructor_hours, institution_hourly_rate, instructor_hourly_rate,
            substitute_instructor_id,
-           courses(id, institution_id, lead_instructor_id, institutions(id, name))`,
+           courses(id, name, institution_id, lead_instructor_id, company_hourly_rate, instructor_hourly_wage, institutions(id, name))`,
         )
         .eq("status", "completed")
         .gte("session_date", startDate)
@@ -110,9 +120,13 @@ export async function getPartnerReportSessions(
       id: row.id,
       session_date: row.session_date,
       status: row.status as SessionStatus,
+      course_name: course.name,
+      company_hours: row.company_hours,
       instructor_hours: row.instructor_hours,
-      company_hourly_rate: row.institution_hourly_rate,
-      instructor_hourly_rate: row.instructor_hourly_rate,
+      sessionInstitutionHourlyRate: row.institution_hourly_rate,
+      sessionInstructorHourlyRate: row.instructor_hourly_rate,
+      courseCompanyHourlyRate: course.company_hourly_rate,
+      courseInstructorHourlyWage: course.instructor_hourly_wage,
       instructor_id: instructorId,
       instructor_name: instructorNames.get(instructorId) ?? "מדריך לא ידוע",
       institution_id: course.institution_id,

@@ -7,7 +7,8 @@ export type ReportSearchParams = {
   filterInstitution?: string;
 };
 
-export function buildReportsUrl(
+export function buildReportPathUrl(
+  basePath: "/reports" | "/reports/audit",
   dateRange: PartnerReportDateRange,
   searchParams?: ReportSearchParams,
 ): string {
@@ -23,5 +24,19 @@ export function buildReportsUrl(
     params.set("filterInstitution", searchParams.filterInstitution);
   }
 
-  return `/reports?${params.toString()}`;
+  return `${basePath}?${params.toString()}`;
+}
+
+export function buildReportsUrl(
+  dateRange: PartnerReportDateRange,
+  searchParams?: ReportSearchParams,
+): string {
+  return buildReportPathUrl("/reports", dateRange, searchParams);
+}
+
+export function buildFinancialAuditUrl(
+  dateRange: PartnerReportDateRange,
+  searchParams?: ReportSearchParams,
+): string {
+  return buildReportPathUrl("/reports/audit", dateRange, searchParams);
 }

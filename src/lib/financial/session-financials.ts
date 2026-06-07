@@ -1,6 +1,11 @@
 import type { SessionStatus } from "@/components/sessions/constants";
 import { roundMoney } from "@/lib/financial/round-money";
 import {
+  courseRatesFromDb as resolveCourseRatesFromDb,
+  resolveSessionRates,
+  sessionRatesFromDb,
+} from "@/lib/financial/resolve-session-rates";
+import {
   countsAsActualFinancial,
   countsAsPotentialFinancial,
 } from "@/lib/financial/status";
@@ -145,21 +150,18 @@ export function getEffectiveRatesFromParts(
   missingInstitutionRate: boolean;
   missingInstructorRate: boolean;
 } {
-  const effectiveInstitutionHourlyRate =
-    overrides.institutionHourlyRate !== null && overrides.institutionHourlyRate !== undefined
-      ? overrides.institutionHourlyRate
-      : (course.institutionHourlyRate ?? 0);
-
-  const effectiveInstructorHourlyRate =
-    overrides.instructorHourlyRate !== null && overrides.instructorHourlyRate !== undefined
-      ? overrides.instructorHourlyRate
-      : (course.instructorHourlyRate ?? 0);
+  const resolved = resolveSessionRates({
+    sessionInstitutionHourlyRate: overrides.institutionHourlyRate,
+    sessionInstructorHourlyRate: overrides.instructorHourlyRate,
+    courseCompanyHourlyRate: course.institutionHourlyRate,
+    courseInstructorHourlyWage: course.instructorHourlyRate,
+  });
 
   return {
-    effectiveInstitutionHourlyRate,
-    effectiveInstructorHourlyRate,
-    missingInstitutionRate: effectiveInstitutionHourlyRate <= 0,
-    missingInstructorRate: effectiveInstructorHourlyRate <= 0,
+    effectiveInstitutionHourlyRate: resolved.companyRate,
+    effectiveInstructorHourlyRate: resolved.instructorRate,
+    missingInstitutionRate: resolved.missingCompanyRate,
+    missingInstructorRate: resolved.missingInstructorRate,
   };
 }
 
@@ -259,9 +261,11 @@ export function courseRatesFromDb(course: {
   company_hourly_rate: number;
   instructor_hourly_wage: number;
 }): CourseRateDefaults {
+  const mapped = resolveCourseRatesFromDb(course);
+
   return {
-    institutionHourlyRate: course.company_hourly_rate,
-    instructorHourlyRate: course.instructor_hourly_wage,
+    institutionHourlyRate: mapped.courseCompanyHourlyRate ?? 0,
+    instructorHourlyRate: mapped.courseInstructorHourlyWage ?? 0,
   };
 }
 
@@ -269,8 +273,10 @@ export function sessionOverridesFromDb(session: {
   institution_hourly_rate: number | null;
   instructor_hourly_rate: number | null;
 }): SessionRateOverrides {
+  const mapped = sessionRatesFromDb(session);
+
   return {
-    institutionHourlyRate: session.institution_hourly_rate,
-    instructorHourlyRate: session.instructor_hourly_rate,
+    institutionHourlyRate: mapped.sessionInstitutionHourlyRate,
+    instructorHourlyRate: mapped.sessionInstructorHourlyRate,
   };
 }

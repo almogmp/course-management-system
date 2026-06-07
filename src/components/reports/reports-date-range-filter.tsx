@@ -3,12 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { buildReportsUrl, type ReportSearchParams } from "@/lib/reports/report-url";
+import { buildReportPathUrl, type ReportSearchParams } from "@/lib/reports/report-url";
 import type { PartnerReportDateRange } from "@/lib/reports/partner-report-types";
 
 type ReportsDateRangeFilterProps = {
   dateRange: PartnerReportDateRange;
   searchParams?: ReportSearchParams;
+  basePath?: "/reports" | "/reports/audit";
+  submitLabel?: string;
 };
 
 const inputClassName =
@@ -20,6 +22,8 @@ const buttonClassName =
 export function ReportsDateRangeFilter({
   dateRange,
   searchParams,
+  basePath = "/reports",
+  submitLabel = "הצג דוח",
 }: ReportsDateRangeFilterProps) {
   const router = useRouter();
   const [from, setFrom] = useState(dateRange.from);
@@ -27,7 +31,8 @@ export function ReportsDateRangeFilter({
 
   function applyRange() {
     router.push(
-      buildReportsUrl(
+      buildReportPathUrl(
+        basePath,
         { from, to },
         {
           filterInstructor: searchParams?.filterInstructor,
@@ -61,7 +66,7 @@ export function ReportsDateRangeFilter({
         />
       </label>
       <button type="button" className={buttonClassName} onClick={applyRange}>
-        הצג דוח
+        {submitLabel}
       </button>
     </section>
   );
