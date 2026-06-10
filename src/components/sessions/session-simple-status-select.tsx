@@ -28,6 +28,8 @@ type SessionSimpleStatusSelectProps = {
   sessionDate?: string;
   startTime?: string;
   compact?: boolean;
+  /** Extra-dense styling for dashboard calendar cards */
+  calendar?: boolean;
   className?: string;
 };
 
@@ -39,6 +41,7 @@ export function SessionSimpleStatusSelect({
   sessionDate,
   startTime,
   compact = false,
+  calendar = false,
   className,
 }: SessionSimpleStatusSelectProps) {
   const router = useRouter();
@@ -83,16 +86,29 @@ export function SessionSimpleStatusSelect({
   }
 
   return (
-    <div className={cn("w-full", compact ? "max-w-[9rem]" : "max-w-xs", className)} aria-busy={pending}>
+    <div
+      className={cn(
+        "w-full",
+        calendar ? "max-w-full" : compact ? "max-w-[9rem]" : "max-w-xs",
+        className,
+      )}
+      aria-busy={pending}
+    >
       <select
         id={`session-status-${sessionId}`}
         aria-label="סטטוס מפגש"
         value={selectValue}
         disabled={pending || (mode === "instructor" && !instructorCanUpdate)}
         onChange={(event) => handleChange(event.target.value as SessionsListAdminStatusValue)}
+        onClick={(event) => event.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
         className={cn(
-          "w-full rounded-lg border border-border bg-background text-center font-medium text-foreground disabled:opacity-60",
-          compact ? "min-h-8 px-2 py-1 text-xs" : "min-h-9 px-2 py-1.5 text-sm",
+          "w-full rounded border border-border bg-background text-center font-medium text-foreground disabled:opacity-60",
+          calendar
+            ? "min-h-7 px-1 py-0.5 text-[10px] sm:text-xs"
+            : compact
+              ? "min-h-8 px-2 py-1 text-xs"
+              : "min-h-9 rounded-lg px-2 py-1.5 text-sm",
         )}
       >
         {SIMPLE_SESSION_STATUS_OPTIONS.map((option) => (
@@ -102,7 +118,13 @@ export function SessionSimpleStatusSelect({
         ))}
       </select>
       {error ? (
-        <p className="mt-1 text-center text-xs text-red-700" role="alert">
+        <p
+          className={cn(
+            "mt-0.5 text-center text-red-700",
+            calendar ? "text-[9px] leading-tight" : "text-xs",
+          )}
+          role="alert"
+        >
           {error}
         </p>
       ) : null}

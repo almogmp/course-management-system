@@ -101,7 +101,12 @@ async function DashboardCalendarSectionContent({
           </div>
         ) : null}
 
-        <MonthlyCalendar calendarDays={enrichedCalendarDays} sessions={sessions} />
+        <MonthlyCalendar
+          calendarDays={enrichedCalendarDays}
+          sessions={sessions}
+          isAdmin={isAdmin}
+          statusControl
+        />
       </section>
     );
   }
@@ -153,7 +158,12 @@ async function DashboardCalendarSectionContent({
         </div>
       ) : null}
 
-      <WeeklyCalendar weekDays={enrichedWeekDays} sessions={sessions} />
+      <WeeklyCalendar
+        weekDays={enrichedWeekDays}
+        sessions={sessions}
+        isAdmin={isAdmin}
+        statusControl
+      />
     </section>
   );
 }

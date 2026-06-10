@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 type MonthlyCalendarProps = {
   calendarDays: MonthCalendarDay[];
   sessions: WeeklyCalendarSession[];
+  isAdmin?: boolean;
+  statusControl?: boolean;
 };
 
 function sortSessionsByStartTime(
@@ -17,7 +19,12 @@ function sortSessionsByStartTime(
   return [...daySessions].sort((a, b) => a.start_time.localeCompare(b.start_time));
 }
 
-export function MonthlyCalendar({ calendarDays, sessions }: MonthlyCalendarProps) {
+export function MonthlyCalendar({
+  calendarDays,
+  sessions,
+  isAdmin = false,
+  statusControl = false,
+}: MonthlyCalendarProps) {
   const sessionsByDate = groupSessionsByDate(sessions);
 
   for (const dateKey of Object.keys(sessionsByDate)) {
@@ -68,7 +75,12 @@ export function MonthlyCalendar({ calendarDays, sessions }: MonthlyCalendarProps
               <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain">
                 {daySessions.map((session) => (
                   <li key={session.id}>
-                    <CompactCalendarSessionCard session={session} dense={dayDense} />
+                    <CompactCalendarSessionCard
+                      session={session}
+                      dense={dayDense}
+                      isAdmin={isAdmin}
+                      statusControl={statusControl}
+                    />
                   </li>
                 ))}
               </ul>

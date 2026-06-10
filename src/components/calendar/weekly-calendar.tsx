@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 type WeeklyCalendarProps = {
   weekDays: WeekDay[];
   sessions: WeeklyCalendarSession[];
+  isAdmin?: boolean;
+  statusControl?: boolean;
 };
 
 const MOBILE_SCROLL_SESSION_THRESHOLD = 6;
@@ -22,22 +24,36 @@ function sortSessionsByStartTime(
 function DaySessionsList({
   daySessions,
   dense,
+  isAdmin,
+  statusControl,
 }: {
   daySessions: WeeklyCalendarSession[];
   dense: boolean;
+  isAdmin: boolean;
+  statusControl: boolean;
 }) {
   return (
     <ul className={cn("space-y-1", dense && "space-y-0.5")}>
       {daySessions.map((session) => (
         <li key={session.id}>
-          <CompactCalendarSessionCard session={session} dense={dense} />
+          <CompactCalendarSessionCard
+            session={session}
+            dense={dense}
+            isAdmin={isAdmin}
+            statusControl={statusControl}
+          />
         </li>
       ))}
     </ul>
   );
 }
 
-export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
+export function WeeklyCalendar({
+  weekDays,
+  sessions,
+  isAdmin = false,
+  statusControl = false,
+}: WeeklyCalendarProps) {
   const sessionsByDate = groupSessionsByDate(sessions);
 
   for (const dateKey of Object.keys(sessionsByDate)) {
@@ -77,10 +93,20 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
                 <p className="text-xs text-muted-foreground">אין מפגשים</p>
               ) : useMobileScroll ? (
                 <div className="max-h-[min(32rem,70vh)] overflow-y-auto overscroll-contain">
-                  <DaySessionsList daySessions={daySessions} dense={dayDense} />
+                  <DaySessionsList
+                    daySessions={daySessions}
+                    dense={dayDense}
+                    isAdmin={isAdmin}
+                    statusControl={statusControl}
+                  />
                 </div>
               ) : (
-                <DaySessionsList daySessions={daySessions} dense={dayDense} />
+                <DaySessionsList
+                  daySessions={daySessions}
+                  dense={dayDense}
+                  isAdmin={isAdmin}
+                  statusControl={statusControl}
+                />
               )}
             </section>
           );
@@ -115,7 +141,12 @@ export function WeeklyCalendar({ weekDays, sessions }: WeeklyCalendarProps) {
                 {daySessions.length === 0 ? (
                   <p className="text-center text-xs text-muted-foreground">—</p>
                 ) : (
-                  <DaySessionsList daySessions={daySessions} dense={dayDense} />
+                  <DaySessionsList
+                    daySessions={daySessions}
+                    dense={dayDense}
+                    isAdmin={isAdmin}
+                    statusControl={statusControl}
+                  />
                 )}
               </div>
             </div>
